@@ -1,0 +1,6 @@
+"GGC2020_johnjoemcbob"
+{
+	"base"			"base"
+	"title"			"GGC2020_johnjoemcbob"
+	"menusystem"	"1"
+}
