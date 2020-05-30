@@ -32,8 +32,10 @@ GM.ShipPartModels		= {
 		Corner = "models/cerus/modbridge/core/c-111.mdl",
 	},
 }
-
 -- Convert from 1 to 3 = models/cerus/modbridge/core/spartan/cv-11-31.mdl
+HOOK_PREFIX = "GGC2020_johnjoemcbob_"
+COLOUR_BLACK = Color( 0, 0, 0, 255 )
+COLOUR_WHITE = Color( 255, 255, 255, 255 )
 
 -- Resources
 
