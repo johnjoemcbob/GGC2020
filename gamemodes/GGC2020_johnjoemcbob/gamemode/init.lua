@@ -9,6 +9,7 @@
 AddCSLuaFile( "shared.lua" )
 
 AddCSLuaFile( "cl_init.lua" )
+AddCSLuaFile( "cl_modelcache.lua" )
 
 -- LUA Includes
 include( "shared.lua" )

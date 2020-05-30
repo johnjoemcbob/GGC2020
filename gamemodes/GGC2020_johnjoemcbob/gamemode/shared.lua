@@ -21,8 +21,27 @@ end
 -- Globals
 GM.Epsilon				= 0.001
 GM.GamemodePath			= "gamemodes/GGC2020_johnjoemcbob/"
+GM.ShipPartModels		= {
+	["1x1"] = {
+		Straight = "models/cerus/modbridge/core/s-111.mdl",
+		StraightGlass = "models/cerus/modbridge/core/s-111g.mdl",
+		End = "models/cerus/modbridge/core/sc-111.mdl",
+		EndGlass = "models/cerus/modbridge/core/sc-111g.mdl",
+		T = "models/cerus/modbridge/core/t-111.mdl",
+		Cross = "models/cerus/modbridge/core/x-111.mdl",
+		Corner = "models/cerus/modbridge/core/c-111.mdl",
+	},
+}
+
+-- Convert from 1 to 3 = models/cerus/modbridge/core/spartan/cv-11-31.mdl
 
 -- Resources
 
+-- TODO move to util
+function tablelength(T)
+  local count = 0
+  for _ in pairs(T) do count = count + 1 end
+  return count
+end
 
 -- Includes (after globals)
