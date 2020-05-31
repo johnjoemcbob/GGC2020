@@ -25,6 +25,8 @@ local MAT_GUNS_FUTURE = Material( "guns_future.png", "nocull 1 smooth 0" )
 	local MAT_GUNS_FUTURE_HEIGHT = 1024
 	local GUNSCALE = 0.3
 
+local MAT_MUZZLEFLASH = Material( "muzzleflash.png", "nocull 1 smooth 0" )
+
 local PLAYER_WIDTH = 40
 local PLAYER_HEIGHT = 74
 local PLAYER_UV_WIDTH = 41
@@ -121,17 +123,9 @@ function GM:PrePlayerDraw( ply )
 		DrawPlayerWithUVs( -PLAYER_WIDTH / 2, -PLAYER_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT, MAT_PLAYER, anim, frame, left )
 
 		-- Draw weapon
-		local gun = ply:Get2DGun()
-		local start = gun[1]
-		local w = gun[2].x
-		local h = gun[2].y
 		local x = -PLAYER_WIDTH / 2
 		local y = -PLAYER_HEIGHT / 5 * 3 + 1 * frame
-
-		local scale = 1
-		surface.SetDrawColor( COLOUR_WHITE )
-		surface.SetMaterial( MAT_GUNS_FUTURE )
-		DrawWithUVs( x, y, w * scale * GUNSCALE, h * GUNSCALE, start.x / MAT_GUNS_FUTURE_WIDTH, start.y / MAT_GUNS_FUTURE_HEIGHT, ( start.x + w ) / MAT_GUNS_FUTURE_WIDTH, ( start.y + h ) / MAT_GUNS_FUTURE_HEIGHT, left )
+		DrawWeapon( ply, x, y, 1, left )
 	cam.End3D2D()
 
 	return true
@@ -144,16 +138,12 @@ end
 function GM:PreDrawViewModel( viewmodel, ply, weapon )
 	if ( !ply ) then return end
 
-	local gun = ply:Get2DGun()
-	local start = gun[1]
-	local w = gun[2].x
-	local h = gun[2].y
-
 	local scale = 2
 	local ang = LocalPlayer():EyeAngles()
 	local pos = LocalPlayer():EyePos() +
 		ang:Forward() * 90 +
 		ang:Right() * 8 +
+		-- ang:Right() * 24 +
 		ang:Up() * 3
 		-- ang.p = 0
 		-- ang.r = 0
@@ -164,10 +154,7 @@ function GM:PreDrawViewModel( viewmodel, ply, weapon )
 		ang:RotateAroundAxis( ang:Up(), 180 + 5 )
 		ang:RotateAroundAxis( ang:Forward(), 90 )
 	cam.Start3D2D( pos, ang, 1 )
-		surface.SetDrawColor( COLOUR_WHITE )
-		-- surface.DrawRect( 0, 0, w, h )
-		surface.SetMaterial( MAT_GUNS_FUTURE )
-		surface.DrawTexturedRectUV( 0, 0, w * scale * GUNSCALE, h * GUNSCALE, start.x / MAT_GUNS_FUTURE_WIDTH, start.y / MAT_GUNS_FUTURE_HEIGHT, ( start.x + w ) / MAT_GUNS_FUTURE_WIDTH, ( start.y + h ) / MAT_GUNS_FUTURE_HEIGHT )
+		DrawWeapon( ply, 0, 0, scale, true )
 	cam.End3D2D()
 
 	return true
@@ -177,6 +164,39 @@ end
 -------------------------
 
 -- UV anims
+function DrawWeapon( ply, x, y, scale, left )
+	local gun = ply:Get2DGun()
+	local start = gun[1]
+	local w = gun[2].x
+	local h = gun[2].y
+	local border = 2
+
+	surface.SetDrawColor( COLOUR_WHITE )
+	surface.SetMaterial( MAT_GUNS_FUTURE )
+	DrawWithUVs( x, y, w * scale * GUNSCALE, h * GUNSCALE, start.x / MAT_GUNS_FUTURE_WIDTH, start.y / MAT_GUNS_FUTURE_HEIGHT, ( start.x + w ) / MAT_GUNS_FUTURE_WIDTH, ( start.y + h ) / MAT_GUNS_FUTURE_HEIGHT, left )
+
+	local last = ply:GetActiveWeapon():LastShootTime()
+	if ( last + 0.1 >= CurTime() ) then
+		surface.SetMaterial( MAT_MUZZLEFLASH )
+		local size = math.random( 0.9, 1.1 )
+		local size = 1
+		local colour = math.sin( CurTime() * 50 ) / 2 + 0.5
+		local muzzle = 1.1
+			if ( left ) then
+				muzzle = -1
+			end
+			muzzle = muzzle * size
+		surface.SetDrawColor( Color( 255, 255, 255, 255 * colour ) )
+		DrawWithUVs(
+			x + w * scale * GUNSCALE * muzzle - border * muzzle,
+			y - border * 2 + 14 * -size + 14,
+			w * scale * size * GUNSCALE,
+			h * size * GUNSCALE,
+			0, 0, 1, 1,
+			left
+		)
+	end
+end
 function DrawPlayerWithUVs( x, y, w, h, mat, anim, frame, left )
 	-- 17 / 643, 94 / 831, ( 17 + 68 ) / 643, ( 94 + 68 ) / 831
 	local uvs = ANIMS[mat][anim][frame]

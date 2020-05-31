@@ -44,13 +44,22 @@ local CORRWIDTH = 4
 SHIPPARTS = {
 	["x-111"] = {
 		"models/cerus/modbridge/core/x-111.mdl",
+		Vector( 1, 1, 1 ),
+		Vector( 0, 0, 0 ),
 		function( self, w, h )
-			surface.DrawRect( w / 2 - CORRWIDTH / 2, 0, CORRWIDTH, h )
-			surface.DrawRect( 0, h / 2 - CORRWIDTH / 2, w, CORRWIDTH )
-		end
+			-- surface.DrawRect( w / 2 - CORRWIDTH / 2, 0, CORRWIDTH, h )
+			-- surface.DrawRect( 0, h / 2 - CORRWIDTH / 2, w, CORRWIDTH )
+			AddRotatableSegment( 2, 1, w, h, self.Rotation )
+			AddRotatableSegment( 2, 2, w, h, self.Rotation )
+			AddRotatableSegment( 2, 3, w, h, self.Rotation )
+			AddRotatableSegment( 1, 2, w, h, self.Rotation )
+			AddRotatableSegment( 3, 2, w, h, self.Rotation )
+		end,
 	},
 	["c-111"] = {
 		"models/cerus/modbridge/core/c-111.mdl",
+		Vector( 1, 1, 1 ),
+		Vector( 0, 0, 0 ),
 		function( self, w, h )
 			local rotation = {
 				{ 0.5, 0.5, 0, 0.5 },
@@ -61,10 +70,12 @@ SHIPPARTS = {
 			local r = rotation[self.Rotation + 1]
 			surface.DrawRect( r[1] * w - CORRWIDTH / 2, r[2] * h, CORRWIDTH, h / 2 + CORRWIDTH / 2 )
 			surface.DrawRect( r[3] * w, r[4] * h - CORRWIDTH / 2, w / 2, CORRWIDTH )
-		end
+		end,
 	},
 	["s-111"] = {
 		"models/cerus/modbridge/core/s-111.mdl",
+		Vector( 1, 1, 1 ),
+		Vector( 0, 0, 0 ),
 		function( self, w, h )
 			local rotation = {
 				false,
@@ -78,10 +89,12 @@ SHIPPARTS = {
 			else
 				surface.DrawRect( 0, h / 2 - CORRWIDTH / 2, w, CORRWIDTH )
 			end
-		end
+		end,
 	},
 	["t-111"] = {
 		"models/cerus/modbridge/core/t-111.mdl",
+		Vector( 1, 1, 1 ),
+		Vector( 0, 0, 0 ),
 		function( self, w, h )
 			local cw = CORRWIDTH
 			local rotation = {
@@ -93,10 +106,12 @@ SHIPPARTS = {
 			local r = rotation[self.Rotation + 1]
 			surface.DrawRect( r[1] * w - r[3] / 2, r[2] * h - cw / 2, r[3], r[4] )
 			surface.DrawRect( r[5] * w - r[7] / 2, r[6] * h - cw / 2, r[7], r[8] )
-		end
+		end,
 	},
 	["sc-111"] = {
 		"models/cerus/modbridge/core/sc-111.mdl",
+		Vector( 1, 1, 1 ),
+		Vector( 0, 0, 0 ),
 		function( self, w, h )
 			local cw = CORRWIDTH
 			local rotation = {
@@ -107,10 +122,28 @@ SHIPPARTS = {
 			}
 			local r = rotation[self.Rotation + 1]
 			surface.DrawRect( r[1] * w - r[3] / 2, r[2] * h - cw / 2, r[3], r[4] )
-		end
+		end,
+	},
+	["sc-g-111"] = {
+		"models/cerus/modbridge/core/sc-111g.mdl",
+		Vector( 1, 1, 1 ),
+		Vector( 0, 0, 0 ),
+		function( self, w, h )
+			local cw = CORRWIDTH
+			local rotation = {
+				{ 1, 0.5, w, cw }, -- 0
+				{ 0.5, -0.5, cw, w }, -- 1
+				{ 0, 0.5, w, cw }, -- 2
+				{ 0.5, 0.5, cw, w }, -- 3
+			}
+			local r = rotation[self.Rotation + 1]
+			surface.DrawRect( r[1] * w - r[3] / 2, r[2] * h - cw / 2, r[3], r[4] )
+		end,
 	},
 	["s-311"] = {
 		"models/cerus/modbridge/core/s-311.mdl",
+		Vector( 3, 1, 1 ),
+		Vector( 0, 0, 0 ),
 		function( self, w, h )
 			local rotation = {
 				false,
@@ -125,11 +158,25 @@ SHIPPARTS = {
 			else
 				surface.DrawRect( 0, h / 2 - CORRWIDTH / 2, w, CORRWIDTH )
 			end
-		end
+		end,
+	},
+	["x-221"] = {
+		"models/cerus/modbridge/core/x-221.mdl",
+		Vector( 2, 2, 1 ),
+		Vector( -0.5, 0.5, 0 ),
+		function( self, w, h )
+			surface.DrawRect( 0, 0, w, h )
+		end,
 	},
 }
 
 -- Resources
+
+function GM:PlayerFootstep( ply, pos, foot, sound, volume, rf ) 
+	ply:EmitSound( "physics/metal/metal_canister_impact_soft2.wav", 75, math.random( 80, 120 ), 0.2 )
+	ply:ViewPunch( Angle( 1, 0, 2 * ( ( foot == 1 ) and 1 or -1 ) ) )
+	return true
+end
 
 -- TODO move to util
 function tablelength(T)
