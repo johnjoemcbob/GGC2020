@@ -16,7 +16,9 @@ AddCSLuaFile( "cl_shipeditor.lua" )
 include( "shared.lua" )
 
 -- Resources
-resource.AddFile( "materials/pixel.vtf" )
+resource.AddFile( "materials/playersheet.png" )
+resource.AddFile( "materials/gun_future.png" )
+resource.AddFile( "materials/muzzleflash.png" )
 
 sound.Add( {
 	name = HOOK_PREFIX .. "JUMP",
@@ -34,7 +36,18 @@ net.Receive( NET_SHIPEDITOR_SPAWN, function( len, ply )
 	local json = file.Read( HOOK_PREFIX .. "/ship.txt" )
 	local tab = util.JSONToTable( json )
 
+	-- Clear old
+	if ( ply.Ship ) then
+		for k, part in pairs( ply.Ship ) do
+			if ( part and part:IsValid() ) then
+				part:Remove()
+			end
+		end
+	end
+
+	-- Generate new
 	local first = nil
+	ply.Ship = {}
 	for k, v in pairs ( tab ) do
 		local part = SHIPPARTS[v.Name]
 			v.Collisions = part[2]
@@ -43,7 +56,7 @@ net.Receive( NET_SHIPEDITOR_SPAWN, function( len, ply )
 			end
 		local ent = GAMEMODE.CreateProp(
 			part[1],
-			SHIPEDITOR_ORIGIN +
+			SHIPEDITOR_ORIGIN( ply ) +
 				Vector(
 					v.Grid.x + math.floor( v.Collisions.x / 2 ) + part[3].x,
 					-v.Grid.y - math.floor( v.Collisions.y / 2 ) + part[3].y
@@ -51,11 +64,25 @@ net.Receive( NET_SHIPEDITOR_SPAWN, function( len, ply )
 			Angle( 0, 90 * v.Rotation, 0 ),
 			false
 		)
-		local bright = 100
-		ent:SetColor( Color( bright, bright, bright, 255 ) )
+		ent:SetColor( COLOUR_UNLIT )
+		table.insert( ply.Ship, ent )
+
+		-- Temp testing
+		if ( math.random( 1, 2 ) == 1 ) then
+			local npc = GAMEMODE.CreateEnt( "npc_combine_s", nil, ent:GetPos(), Angle( 0, 0, 0 ) )
+				npc:Give( "weapon_ar2" )
+				npc:SetHealth( 20 )
+				-- npc:SetNoDraw( true )
+				-- npc:GiveAmmo( 2000, "AR2" )
+			table.insert( ply.Ship, npc )
+		else
+			ply.SpawnPoint = ent:GetPos() - Vector( 0, 0, 32 )
+			ply:SetPos( ply.SpawnPoint )
+			ply:SetHealth( ply:GetMaxHealth() )
+		end
 
 		if ( first ) then
-			ent:SetParent( first )
+			-- ent:SetParent( first )
 		else
 			first = ent
 		end
@@ -81,12 +108,29 @@ hook.Add( "PlayerSpawn", HOOK_PREFIX .. "PlayerSpawn", function( ply )
 	timer.Simple( 0, function()
 		ply:SetWalkSpeed( 250 )
 		ply:SetRunSpeed( 250 )
+		-- ply:SetBloodColor( BLOOD_COLOR_MECH )
+		ply:SetBloodColor( BLOOD_COLOR_ANTLION_WORKER )
+
+		ply:StripWeapons()
+		ply:Give( "weapon_ar2" )
+		ply:GiveAmmo( 2000, "AR2" )
+
+		if ( ply.SpawnPoint ) then
+			ply:SetPos( ply.SpawnPoint )
+		end
 	end )
 end )
 
 function GM:Think()
 	
 end
+
+hook.Add( "PlayerDeathThink", HOOK_PREFIX .. "PlayerDeathThink", function( ply )
+	-- Don't show human ragdolls!
+	if ( ply:GetRagdollEntity() and ply:GetRagdollEntity():IsValid() ) then
+		ply:GetRagdollEntity():Remove()
+	end
+end )
 
 -- engine.LightStyle( 0, "m" )
 function GM:HandlePlayerJumping( ply, vel )
@@ -95,7 +139,8 @@ function GM:HandlePlayerJumping( ply, vel )
 
 		ply:ViewPunch( Angle( -5, 0, 0 ) )
 		util.Decal( "Scorch", ply:EyePos(), ply:GetPos() + Vector( 0, 0, -10 ), ply )
-
+		GAMEMODE.AddWorldText( ply:GetPos() + Vector( 0, 0, 5 ), Vector( 0, 0, 0 ), Angle( 0, 0, 0 ), 0.3, "pffffft", 1, false )
+	
 		-- If moving at the same time, draw view backwards
 		local hor = Vector( vel.x, vel.y, 0 ):LengthSqr()
 		if ( hor > 0 ) then
@@ -118,3 +163,36 @@ end
 -------------------------
   -- /Gamemode Hooks --
 -------------------------
+
+concommand.Add( "ggcj_testbutton", function( ply, cmd, args )
+	-- local tr =
+	local tr = util.TraceLine( {
+		start = ply:EyePos(),
+		endpos = ply:EyePos() + ply:EyeAngles():Forward() * 10000,
+		filter = ply,
+	} )
+	local ang = tr.HitNormal:Angle()
+		ang:RotateAroundAxis( ang:Up(), 180 )
+		ang:RotateAroundAxis( ang:Forward(), 180 )
+		ang:RotateAroundAxis( ang:Right(), 90 )
+	local ent = GAMEMODE.CreateEnt( "ggcj_button", "models/maxofs2d/button_04.mdl", tr.HitPos, ang, false )
+	ent:SetIsToggle( true )
+	ent.OnTurnOn = function( self, ply )
+		if ( ply.Ship ) then
+			for k, part in pairs( ply.Ship ) do
+				if ( part and part:IsValid() ) then
+					part:SetColor( COLOUR_LIT )
+				end
+			end
+		end
+	end
+	ent.OnTurnOff = function( self, ply )
+		if ( ply.Ship ) then
+			for k, part in pairs( ply.Ship ) do
+				if ( part and part:IsValid() ) then
+					part:SetColor( COLOUR_UNLIT )
+				end
+			end
+		end
+	end
+end )

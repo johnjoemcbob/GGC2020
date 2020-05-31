@@ -108,8 +108,8 @@ function GM:PreRender()
 end
 
 function GM:PreDrawOpaqueRenderables()
-	-- render.Clear( 0, 0, 0, 255 )
-	-- render.ClearDepth()
+	render.Clear( 0, 0, 0, 255 )
+	render.ClearDepth()
 end
 
 function GM:PrePlayerDraw( ply )
@@ -153,14 +153,37 @@ function GM:PrePlayerDraw( ply )
 			end
 			ply.BillboardLeft = left
 		DrawPlayerWithUVs( -PLAYER_WIDTH / 2, -PLAYER_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT, MAT_PLAYER, anim, frame, left )
+	cam.End3D2D()
 
-		-- Draw weapon
+	-- Draw weapon
+	-- TODO DOESN'T WORK, WEAPONS NEED TO REFACTOR TO DRAW THEMSELVES
+	-- TODO DOESN'T WORK, WEAPONS NEED TO REFACTOR TO DRAW THEMSELVES
+	-- TODO DOESN'T WORK, WEAPONS NEED TO REFACTOR TO DRAW THEMSELVES
+	local reloading = false
+		if ( ply:GetActiveWeapon() and ply:GetActiveWeapon():IsValid() ) then
+			reloading = ( ply:GetActiveWeapon():GetActivity() == ACT_RELOAD ) or ( ply:GetActiveWeapon():GetActivity() == ACT_VM_RELOAD )
+			print( ply:GetActiveWeapon():GetActivity() )
+		end
+		if ( reloading ) then
+			ply.ReloadingProgress = ply.ReloadingProgress + FrameTime()
+			ang:RotateAroundAxis( ang:Right(), ply.ReloadingProgress )
+			print( ply.ReloadingProgress )
+		else
+			ply.ReloadingProgress = 0
+		end
+	cam.Start3D2D( pos, ang, 1 )
 		local x = -PLAYER_WIDTH / 2
 		local y = -PLAYER_HEIGHT / 5 * 3 + 1 * frame
 		DrawWeapon( ply, x, y, 1, left )
 	cam.End3D2D()
 
 	return true
+end
+
+function GM:PostDrawOpaqueRenderables()
+	-- for k, npc in pairs( ents.FindByClass( "npc_combine_s" ) ) do
+		-- GAMEMODE:PrePlayerDraw( npc )
+	-- end
 end
 
 function GM:HUDPaint()
@@ -170,27 +193,38 @@ end
 function GM:PreDrawViewModel( viewmodel, ply, weapon )
 	if ( !ply ) then return end
 
+	local ft = FrameTime()
+	-- print( ft )
+	ft = 0.016
+
 	local scale = 2
 	local ang = LocalPlayer():EyeAngles()
 	local pos = LocalPlayer():EyePos() +
-		-- ang:Forward() * 90 +
 		ang:Right() * ( 14 + math.sin( CurTime() * VIEWMODEl_BREATHE_SPEED ) * VIEWMODEl_BREATHE ) +
-		-- ang:Right() * 24 +
 		ang:Up() * ( -3 + math.cos( CurTime() * VIEWMODEl_BREATHE_SPEED ) * VIEWMODEl_BREATHE )
-		-- ang.p = 0
-		-- ang.r = 0
-		-- ang:RotateAroundAxis( ang:Right(), 180 )
-		-- ang:RotateAroundAxis( ang:Up(), 180 )
-		-- ang:RotateAroundAxis( ang:Forward(), 180 )
+		-- Angle after pos
 		ang:RotateAroundAxis( ang:Right(), 3 )
 		ang:RotateAroundAxis( ang:Up(), 180 + 5 )
 		ang:RotateAroundAxis( ang:Forward(), 90 )
-		-- ply.ViewModelAngles = Angle( 0, 0, 0 )
-	ply.ViewModelPos = UnNaN( ply.ViewModelPos )
-	ply.ViewModelPos = LerpVector( FrameTime() * VIEWMODEL_LERP_VECTOR, ply.ViewModelPos, pos )
-	ply.ViewModelAngles = LerpAngle( FrameTime() * VIEWMODEL_LERP_ANGLE, ply.ViewModelAngles, ang )
+	local reloading = false
+		if ( ply:GetActiveWeapon() and ply:GetActiveWeapon():IsValid() ) then
+			reloading = ( ply:GetActiveWeapon():GetActivity() == ACT_RELOAD ) or ( ply:GetActiveWeapon():GetActivity() == ACT_VM_RELOAD )
+		end
+		if ( reloading ) then
+			ply.ReloadingProgress = ply.ReloadingProgress + ft * 230
+			-- print( ply.ReloadingProgress )
+			if ( ply.ReloadingProgress < 360 ) then
+				pos = pos + ang:Forward() * -30
+				ang:RotateAroundAxis( ang:Up(), ply.ReloadingProgress )
+			end
+		else
+			ply.ReloadingProgress = 0
+		end
+	ply.ViewModelPos = LerpVector( ft * VIEWMODEL_LERP_VECTOR, UnNaNVector( ply.ViewModelPos, pos ), pos )
+	ply.ViewModelAngles = LerpAngle( ft * VIEWMODEL_LERP_ANGLE, UnNaNAngle( ply.ViewModelAngles ), ang )
+
 	cam.Start3D2D( ply.ViewModelPos, ply.ViewModelAngles, 1 )
-		DrawWeapon( ply, -80, 0, scale, true )
+		DrawWeapon( ply, -60, 0, scale, true )
 	cam.End3D2D()
 
 	return true
@@ -211,26 +245,42 @@ end
 
 -- UV anims
 function DrawWeapon( ply, x, y, scale, left )
-	local gun = ply:Get2DGun()
+	local gun = Get2DGun()
 	local start = gun[1]
 	local w = gun[2].x
 	local h = gun[2].y
 	local border = 2
 
+	-- Center origin better
+	local dir = 1
+	if ( left ) then
+		x = x - w * scale * GUNSCALE * 0.2
+		dir = -1
+	end
+
+	local last = 0
+		if ( ply:GetActiveWeapon() and ply:GetActiveWeapon():IsValid() ) then
+			last = ply:GetActiveWeapon():LastShootTime()
+		end
+	local firing = last + 0.1 >= CurTime()
+
+	-- 
+	if ( firing ) then
+		x = x - 5 * dir
+	end
+
+	-- Draw gun
 	surface.SetDrawColor( COLOUR_WHITE )
 	surface.SetMaterial( MAT_GUNS_FUTURE )
 	DrawWithUVs( x, y, w * scale * GUNSCALE, h * GUNSCALE, start.x / MAT_GUNS_FUTURE_WIDTH, start.y / MAT_GUNS_FUTURE_HEIGHT, ( start.x + w ) / MAT_GUNS_FUTURE_WIDTH, ( start.y + h ) / MAT_GUNS_FUTURE_HEIGHT, left )
 
-	local last = ply:GetActiveWeapon():LastShootTime()
-	if ( last + 0.1 >= CurTime() ) then
+	-- Draw muzzle flash
+	if ( firing ) then
 		surface.SetMaterial( MAT_MUZZLEFLASH )
 		local size = math.random( 0.9, 1.1 )
 		local size = 1
 		local colour = math.sin( CurTime() * 50 ) / 2 + 0.5
-		local muzzle = 1.1
-			if ( left ) then
-				muzzle = -1
-			end
+		local muzzle = 1 * dir
 			muzzle = muzzle * size
 		surface.SetDrawColor( Color( 255, 255, 255, 255 * colour ) )
 		DrawWithUVs(
@@ -241,6 +291,8 @@ function DrawWeapon( ply, x, y, scale, left )
 			0, 0, 1, 1,
 			left
 		)
+
+		-- ply.ViewModelPos = ply.ViewModelPos - ply:GetForward() * 5
 	end
 end
 function DrawPlayerWithUVs( x, y, w, h, mat, anim, frame, left )
@@ -264,8 +316,14 @@ function DrawWithUVs( x, y, w, h, u1, v1, u2, v2, left )
 	surface.DrawTexturedRectUV( x, y, w, h, u1, v1, u2, v2 )
 end
 
-local meta = FindMetaTable("Player")
-
-function meta:Get2DGun()
+function Get2DGun()
 	return { Vector( 103, 92 ), Vector( 176, 76 ) }
 end
+
+concommand.Add( "ggcj_getpos", function( ply, cmd, args )
+	print( GetPrettyVector( ply:GetPos() ) )
+end )
+
+concommand.Add( "ggcj_getent", function( ply, cmd, args )
+	-- TODO get trace ent and displays
+end )

@@ -5,7 +5,7 @@
 -- Clientside Ship Editor
 --
 
-ShipEditor = {}
+ShipEditor = ShipEditor or {}
 	ShipEditor.Cells = 8
 
 local DRAGDROP_SHIP = "DRAGDROP_SHIP"
@@ -14,7 +14,7 @@ local DRAGDROP_SHIP = "DRAGDROP_SHIP"
   -- Gamemode Hooks --
 -------------------------
 hook.Add( "Think", HOOK_PREFIX .. "_ShipEditor_Think", function()
-	if ( LocalPlayer():KeyPressed( IN_ATTACK2 ) ) then
+	if ( LocalPlayer():KeyPressed( IN_ZOOM ) ) then
 		ShipEditor:CreateVGUI()
 	end
 end )
@@ -25,7 +25,7 @@ hook.Add( "PostDrawOpaqueRenderables", HOOK_PREFIX .. "_ShipEditor_PostDrawOpaqu
 		for k, v in pairs( ShipEditor.ShipParts ) do
 			GAMEMODE.RenderCachedModel(
 				SHIPPARTS[v.Name][1],
-				SHIPEDITOR_ORIGIN +
+				SHIPEDITOR_ORIGIN( LocalPlayer() ) +
 					Vector(
 						v.Grid.x + math.floor( v.Collisions.x / 2 ) + SHIPPARTS[v.Name][3].x,
 						-v.Grid.y - math.floor( v.Collisions.y / 2 ) + SHIPPARTS[v.Name][3].y
@@ -41,9 +41,9 @@ end )
 
 local cooldown = 0
 hook.Add( "CreateMove", HOOK_PREFIX .. "ShipEditor_CreateMove", function()
-	if ( input.WasKeyPressed( KEY_R ) and cooldown <= CurTime() ) then
+	if ( ShipEditor.VGUI and input.WasKeyPressed( KEY_R ) and cooldown <= CurTime() ) then
 		local v = ShipEditor.GrabbedShipPart
-		if ( v ) then
+		if ( v and v.Rotation ) then
 			v.Rotation = v.Rotation + 1
 			if ( v.Rotation > 3 ) then
 				v.Rotation = 0
@@ -76,7 +76,6 @@ function ShipEditor.LoadShip( self )
 		self:Initialize()
 
 		local index = 1
-		print( "load" )
 		for k, v in pairs( tab ) do
 			local spawner = self:AddPartSpawner( v.Name, 0, true )
 				spawner.Grid = v.Grid
@@ -182,6 +181,8 @@ function ShipEditor.CreateVGUI( self )
 				-- if ( isDropped ) then
 					local x, y = frm:GetPos()
 					for k, v in pairs( panels ) do
+						ShipEditor:AddPartSpawner( v.Name, v.Index )
+
 						local gx, gy = getgridpos( mouseX, mouseY )
 						if ( ShipEditor:CanDrop( v, gx, gy ) ) then
 							v.Grid = Vector( gx, gy )
@@ -214,7 +215,7 @@ function ShipEditor.CreateVGUI( self )
 			{}
 		)
 	self.Right = right
-	
+
 	local button = vgui.Create( "DButton", right )
 		button:SetText( "Spawn Physical" )
 		button:SetSize( 250, 30 )
@@ -230,7 +231,6 @@ function ShipEditor.CreateVGUI( self )
 		end
 	button:Dock( BOTTOM )
 
-	print( "open ui" )
 	self:LoadShip()
 end
 
@@ -243,9 +243,16 @@ function ShipEditor.Initialize( self )
 	end
 
 	-- Initialize
+	self.SpawnerListCollision = {}
+		for x = 1, 4 do
+			self.SpawnerListCollision[x] = {}
+			for y = 1, 40 do
+				self.SpawnerListCollision[x][y] = false
+			end
+		end
 	self.Spawners = {}
 		for name, part in pairs( SHIPPARTS ) do
-			self:AddPartSpawner( name )
+			self:AddPartSpawner( name, nil, true )
 		end
 
 	self.ShipParts = {}
@@ -258,34 +265,83 @@ function ShipEditor.Initialize( self )
 	end
 end
 
-function ShipEditor.AddPartSpawner( self, name, index, force )
-	local spawner
-	if ( !index ) then
-		index = tablelength( self.Spawners )
-	end 
-	if ( !self.Spawners[name] or force ) then
-		spawner = vgui.Create( "DPanel", self.Right )
-			spawner:SetPos( 10 + self.CellSize * ( index % 4 ), 10 + self.CellSize * math.floor( index / 4 ) )
-			spawner:SetSize( self.CellSize * SHIPPARTS[name][2].x, self.CellSize * SHIPPARTS[name][2].y )
-			spawner:Droppable( DRAGDROP_SHIP )
-			function spawner:Paint( w, h )
-				if ( w ) then
-					surface.SetDrawColor( COLOUR_BLACK )
-					surface.DrawRect( 0, 0, w, h )
-
-					surface.SetDrawColor( COLOUR_WHITE )
-					if ( spawner.Selected ) then
-						surface.SetDrawColor( Color( 255, 0, 0, 255 ) )
+function ShipEditor.GetFirstFreeSpawnerPos( self, size )
+	local cols = #self.SpawnerListCollision
+	for x = 1, cols do
+		local rows = #self.SpawnerListCollision[x]
+		for y = 1, rows do
+			-- Check if all slots starting here to the size of the piece are free and empty
+			local free = true
+				for cx = 0, size.x - 1 do
+					for cy = 0, size.y - 1 do
+						local sx = x + cx
+						local sy = y + cy
+						if ( ( sx > cols ) or ( sy > rows ) or self.SpawnerListCollision[sx][sy] ) then
+							free = false
+							break
+						end
 					end
-					SHIPPARTS[name][4]( self, w, h )
+					if ( !free ) then break end
 				end
+			if ( free ) then
+				-- Occupy slots here too
+				for cx = 0, size.x - 1 do
+					for cy = 0, size.y - 1 do
+						local sx = x + cx
+						local sy = y + cy
+						self.SpawnerListCollision[sx][sy] = true
+					end
+				end
+
+				return Vector( x, y )
 			end
-			spawner.Name = name
-			spawner.Index = index
-			spawner.Rotation = 0
-			spawner.Collisions = SHIPPARTS[name][2]
-		self.Spawners[name] = spawner
+		end
 	end
+end
+
+function ShipEditor.AddPartSpawner( self, name, index, force )
+	-- if ( !self.CellSize ) then return end
+
+	local spawner
+		local pos
+			-- if ( self.Spawners[name] ) then
+				-- pos = self.Spawners[name].DefaultPos
+				if ( self.GrabbedShipPart != self.Spawners[name] and !force ) then
+					return self.Spawners[name]
+				end
+			-- else
+				pos = self:GetFirstFreeSpawnerPos( SHIPPARTS[name][2] )
+			-- end
+		if ( !index ) then
+			index = tablelength( self.Spawners )
+		end
+
+		-- if ( !self.Spawners[name] or force ) then
+			spawner = vgui.Create( "DPanel", self.Right )
+				pos.x = 10 + pos.x * self.CellSize
+				pos.y = 10 + pos.y * self.CellSize
+				spawner:SetPos( pos.x, pos.y )
+				spawner:SetSize( self.CellSize * SHIPPARTS[name][2].x, self.CellSize * SHIPPARTS[name][2].y )
+				spawner:Droppable( DRAGDROP_SHIP )
+				function spawner:Paint( w, h )
+					if ( w ) then
+						surface.SetDrawColor( COLOUR_BLACK )
+						surface.DrawRect( 0, 0, w, h )
+
+						surface.SetDrawColor( COLOUR_WHITE )
+						if ( spawner.Selected ) then
+							surface.SetDrawColor( Color( 255, 0, 0, 255 ) )
+						end
+						SHIPPARTS[name][4]( self, w, h )
+					end
+				end
+				spawner.Name = name
+				spawner.Index = index
+				spawner.Rotation = 0
+				spawner.Collisions = SHIPPARTS[name][2]
+				spawner.DefaultPos = Vector( pos.x, pos.y )
+			self.Spawners[name] = spawner
+		-- end
 	return spawner
 end
 
@@ -305,6 +361,8 @@ function ShipEditor.CanDrop( self, v, gx, gy )
 end
 
 function ShipEditor.CollideIsSelf( self, v, gx, gy )
+	if ( !v.Grid ) then return false end
+
 	local sx = v.Grid.x
 	local sy = v.Grid.y
 	for x = 0, v.Collisions.x - 1 do
@@ -321,10 +379,6 @@ end
 function ShipEditor.OnDrop( self, v, add )
 	-- Remove this as a spawner and create new
 	-- Unless loading from file!
-	if ( !v.Added or v.Added >= 0 ) then
-		self.Spawners[v.Name] = nil
-		self:AddPartSpawner( v.Name, v.Index )
-	end
 
 	-- If add then add or update existing
 	if ( add ) then
@@ -393,4 +447,4 @@ function AddRotatableSegment( x, y, w, h, rot, segx, segy )
 	)
 end
 
--- ShipEditor:CreateVGUI()
+ShipEditor:CreateVGUI()
