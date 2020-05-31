@@ -65,11 +65,17 @@ ANIMS[MAT_PLAYER]["jump"] = {
 	Vector( 245 - w, 468 ),
 }
 
+VIEWMODEL_LERP_VECTOR	= 45
+VIEWMODEL_LERP_ANGLE	= 25
+VIEWMODEl_BREATHE		= 1
+VIEWMODEl_BREATHE_SPEED	= 1
+
 ------------------------
   -- Gamemode Hooks --
 ------------------------
 function GM:Initialize()
-	
+	LocalPlayer().ViewModelPos = Vector( 0, 0, 0 )
+	LocalPlayer().ViewModelAngles = Angle( 0, 0, 0 )
 end
 
 function GM:Think()
@@ -78,6 +84,32 @@ end
 
 function GM:PreRender()
 	render.SetLightingMode( 0 ) -- 1 )
+
+	local dlight = DynamicLight( LocalPlayer():EntIndex() )
+	if ( dlight ) then
+		dlight.pos = LocalPlayer():GetPos() + Vector( 0, 0, 32 )
+		dlight.r = 255
+		dlight.g = 10
+		dlight.b = 110
+		dlight.brightness = 2
+		dlight.Decay = 1000
+		dlight.Size = 256 * 3
+		dlight.DieTime = CurTime() + 1
+	end
+	-- render.SuppressEngineLighting( true )
+	-- render.SetLocalModelLights( {
+		-- type = MATERIAL_LIGHT_POINT,
+		-- pos = LocalPlayer():GetPos(),
+		-- color = Vector( 255, 255, 255 ),
+		-- range = 0,
+	-- } )
+	-- render.ResetModelLighting( 1, 0, 0 )
+	-- render.SetAmbientLight( 1, 0, 1 )
+end
+
+function GM:PreDrawOpaqueRenderables()
+	-- render.Clear( 0, 0, 0, 255 )
+	-- render.ClearDepth()
 end
 
 function GM:PrePlayerDraw( ply )
@@ -141,23 +173,37 @@ function GM:PreDrawViewModel( viewmodel, ply, weapon )
 	local scale = 2
 	local ang = LocalPlayer():EyeAngles()
 	local pos = LocalPlayer():EyePos() +
-		ang:Forward() * 90 +
-		ang:Right() * 8 +
+		-- ang:Forward() * 90 +
+		ang:Right() * ( 14 + math.sin( CurTime() * VIEWMODEl_BREATHE_SPEED ) * VIEWMODEl_BREATHE ) +
 		-- ang:Right() * 24 +
-		ang:Up() * 3
+		ang:Up() * ( -3 + math.cos( CurTime() * VIEWMODEl_BREATHE_SPEED ) * VIEWMODEl_BREATHE )
 		-- ang.p = 0
 		-- ang.r = 0
 		-- ang:RotateAroundAxis( ang:Right(), 180 )
 		-- ang:RotateAroundAxis( ang:Up(), 180 )
 		-- ang:RotateAroundAxis( ang:Forward(), 180 )
-		-- ang:RotateAroundAxis( ang:Right(), 90 )
+		ang:RotateAroundAxis( ang:Right(), 3 )
 		ang:RotateAroundAxis( ang:Up(), 180 + 5 )
 		ang:RotateAroundAxis( ang:Forward(), 90 )
-	cam.Start3D2D( pos, ang, 1 )
-		DrawWeapon( ply, 0, 0, scale, true )
+		-- ply.ViewModelAngles = Angle( 0, 0, 0 )
+	ply.ViewModelPos = UnNaN( ply.ViewModelPos )
+	ply.ViewModelPos = LerpVector( FrameTime() * VIEWMODEL_LERP_VECTOR, ply.ViewModelPos, pos )
+	ply.ViewModelAngles = LerpAngle( FrameTime() * VIEWMODEL_LERP_ANGLE, ply.ViewModelAngles, ang )
+	cam.Start3D2D( ply.ViewModelPos, ply.ViewModelAngles, 1 )
+		DrawWeapon( ply, -80, 0, scale, true )
 	cam.End3D2D()
 
 	return true
+end
+
+function GM:CalcView( ply, pos, ang, fov )
+	local view = {}
+	view.origin = pos
+	view.angles = ang
+	view.fov = fov
+	view.zfar = 1000
+
+	return view
 end
 -------------------------
   -- /Gamemode Hooks --

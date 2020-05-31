@@ -61,15 +61,9 @@ SHIPPARTS = {
 		Vector( 1, 1, 1 ),
 		Vector( 0, 0, 0 ),
 		function( self, w, h )
-			local rotation = {
-				{ 0.5, 0.5, 0, 0.5 },
-				{ 0.5, 0.5, 0.5, 0.5 },
-				{ 0.5, 0, 0.5, 0.5 },
-				{ 0.5, 0, 0, 0.5 },
-			}
-			local r = rotation[self.Rotation + 1]
-			surface.DrawRect( r[1] * w - CORRWIDTH / 2, r[2] * h, CORRWIDTH, h / 2 + CORRWIDTH / 2 )
-			surface.DrawRect( r[3] * w, r[4] * h - CORRWIDTH / 2, w / 2, CORRWIDTH )
+			AddRotatableSegment( 1, 2, w, h, self.Rotation )
+			AddRotatableSegment( 2, 2, w, h, self.Rotation )
+			AddRotatableSegment( 2, 3, w, h, self.Rotation )
 		end,
 	},
 	["s-111"] = {
@@ -77,18 +71,9 @@ SHIPPARTS = {
 		Vector( 1, 1, 1 ),
 		Vector( 0, 0, 0 ),
 		function( self, w, h )
-			local rotation = {
-				false,
-				true,
-				false,
-				true,
-			}
-			local r = rotation[self.Rotation + 1]
-			if ( r ) then
-				surface.DrawRect( w / 2 - CORRWIDTH / 2, 0, CORRWIDTH, h )
-			else
-				surface.DrawRect( 0, h / 2 - CORRWIDTH / 2, w, CORRWIDTH )
-			end
+			AddRotatableSegment( 1, 2, w, h, self.Rotation )
+			AddRotatableSegment( 2, 2, w, h, self.Rotation )
+			AddRotatableSegment( 3, 2, w, h, self.Rotation )
 		end,
 	},
 	["t-111"] = {
@@ -96,16 +81,10 @@ SHIPPARTS = {
 		Vector( 1, 1, 1 ),
 		Vector( 0, 0, 0 ),
 		function( self, w, h )
-			local cw = CORRWIDTH
-			local rotation = {
-				{ 0.5, 0.5, w, cw, 0.5, 0.5, cw, h }, -- 0
-				{ 1, 0.5, w, cw, 0.5, 0, cw, h + cw }, -- 1
-				{ 0.5, 0.5, w, cw, 0.5, -0.5, cw, h }, -- 2
-				{ 0, 0.5, w, cw, 0.5, 0, cw, h + cw }, -- 3
-			}
-			local r = rotation[self.Rotation + 1]
-			surface.DrawRect( r[1] * w - r[3] / 2, r[2] * h - cw / 2, r[3], r[4] )
-			surface.DrawRect( r[5] * w - r[7] / 2, r[6] * h - cw / 2, r[7], r[8] )
+			AddRotatableSegment( 1, 2, w, h, self.Rotation )
+			AddRotatableSegment( 2, 2, w, h, self.Rotation )
+			AddRotatableSegment( 2, 3, w, h, self.Rotation )
+			AddRotatableSegment( 3, 2, w, h, self.Rotation )
 		end,
 	},
 	["sc-111"] = {
@@ -113,15 +92,7 @@ SHIPPARTS = {
 		Vector( 1, 1, 1 ),
 		Vector( 0, 0, 0 ),
 		function( self, w, h )
-			local cw = CORRWIDTH
-			local rotation = {
-				{ 1, 0.5, w, cw }, -- 0
-				{ 0.5, -0.5, cw, w }, -- 1
-				{ 0, 0.5, w, cw }, -- 2
-				{ 0.5, 0.5, cw, w }, -- 3
-			}
-			local r = rotation[self.Rotation + 1]
-			surface.DrawRect( r[1] * w - r[3] / 2, r[2] * h - cw / 2, r[3], r[4] )
+			AddRotatableSegment( 3, 2, w, h, self.Rotation )
 		end,
 	},
 	["sc-g-111"] = {
@@ -129,15 +100,7 @@ SHIPPARTS = {
 		Vector( 1, 1, 1 ),
 		Vector( 0, 0, 0 ),
 		function( self, w, h )
-			local cw = CORRWIDTH
-			local rotation = {
-				{ 1, 0.5, w, cw }, -- 0
-				{ 0.5, -0.5, cw, w }, -- 1
-				{ 0, 0.5, w, cw }, -- 2
-				{ 0.5, 0.5, cw, w }, -- 3
-			}
-			local r = rotation[self.Rotation + 1]
-			surface.DrawRect( r[1] * w - r[3] / 2, r[2] * h - cw / 2, r[3], r[4] )
+			AddRotatableSegment( 3, 2, w, h, self.Rotation )
 		end,
 	},
 	["s-311"] = {
@@ -145,18 +108,10 @@ SHIPPARTS = {
 		Vector( 3, 1, 1 ),
 		Vector( 0, 0, 0 ),
 		function( self, w, h )
-			local rotation = {
-				false,
-				true,
-				false,
-				true,
-			}
-			local r = rotation[self.Rotation + 1]
-			surface.SetDrawColor( Color( 255, 0, 0, 12 ) )
-			if ( r ) then
-				surface.DrawRect( w / 2 - CORRWIDTH / 2, 0, CORRWIDTH, h )
-			else
-				surface.DrawRect( 0, h / 2 - CORRWIDTH / 2, w, CORRWIDTH )
+			for x = 1, 3 do
+				AddRotatableSegment( 1, 2, w, h, self.Rotation, x )
+				AddRotatableSegment( 2, 2, w, h, self.Rotation, x )
+				AddRotatableSegment( 3, 2, w, h, self.Rotation, x )
 			end
 		end,
 	},
@@ -165,6 +120,7 @@ SHIPPARTS = {
 		Vector( 2, 2, 1 ),
 		Vector( -0.5, 0.5, 0 ),
 		function( self, w, h )
+			-- Just a big ol' square
 			surface.DrawRect( 0, 0, w, h )
 		end,
 	},
@@ -183,6 +139,13 @@ function tablelength(T)
   local count = 0
   for _ in pairs(T) do count = count + 1 end
   return count
+end
+function UnNaN( vector )
+	-- NaN isn't equal to itself
+	if ( vector.x == vector.x and vector.y == vector.y and vector.z == vector.z ) then
+		return vector
+	end
+	return Vector( 0, 0, 0 )
 end
 
 -- Includes (after globals)

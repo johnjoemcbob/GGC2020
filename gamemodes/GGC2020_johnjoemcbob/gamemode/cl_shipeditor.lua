@@ -76,6 +76,7 @@ function ShipEditor.LoadShip( self )
 		self:Initialize()
 
 		local index = 1
+		print( "load" )
 		for k, v in pairs( tab ) do
 			local spawner = self:AddPartSpawner( v.Name, 0, true )
 				spawner.Grid = v.Grid
@@ -84,7 +85,7 @@ function ShipEditor.LoadShip( self )
 					local w, h = spawner:GetSize()
 					spawner:SetSize( h, w )
 					spawner.Collisions = Vector( spawner.Collisions.y, spawner.Collisions.x )
-				end
+				end 
 				spawner.Added = -index
 			self:OnDrop( spawner, true )
 
@@ -129,7 +130,6 @@ function ShipEditor.CreateVGUI( self )
 
 	self:Initialize()
 
-	self.Spawners = {}
 	local function getgridpos( mx, my )
 		local gx = math.Clamp( math.floor( ( mx / self.CellSize ) ), 1, self.Cells )
 		local gy = math.Clamp( math.floor( ( ( my - ystart ) / self.CellSize ) + 1 ), 1, self.Cells )
@@ -230,14 +230,24 @@ function ShipEditor.CreateVGUI( self )
 		end
 	button:Dock( BOTTOM )
 
-	for name, part in pairs( SHIPPARTS ) do
-		self:AddPartSpawner( name )
-	end
-
+	print( "open ui" )
 	self:LoadShip()
 end
 
 function ShipEditor.Initialize( self )
+	-- Cleanup
+	if ( self.Spawners ) then
+		for k, v in pairs( self.Spawners ) do
+			v:Remove()
+		end
+	end
+
+	-- Initialize
+	self.Spawners = {}
+		for name, part in pairs( SHIPPARTS ) do
+			self:AddPartSpawner( name )
+		end
+
 	self.ShipParts = {}
 	self.ShipCollisions = {}
 	for x = 1, self.Cells do
@@ -347,19 +357,6 @@ function ShipEditor.OnDrop( self, v, add )
 	self:SaveShip()
 end
 
-function ShipEditor.RotatePart( self, v, loaded )
-	-- Blank old collision
-	if ( !loaded ) then
-		self:SetCollision( v, false )
-	end
-
-	-- Now rotate collision
-	
-
-	-- Create new collision
-	self:SetCollision( v, true )
-end
-
 function ShipEditor.SetCollision( self, v, on )
 	for x = 0, v.Collisions.x - 1 do
 		for y = 0, v.Collisions.y - 1 do
@@ -368,9 +365,32 @@ function ShipEditor.SetCollision( self, v, on )
 	end
 end
 
-function AddRotatableSegment( x, y, w, h, rot )
-	local cell = w / 3
-	surface.DrawRect( ( x - 1 ) * cell, ( y - 1 ) * cell, cell + 1, cell + 1 )
+function AddRotatableSegment( x, y, w, h, rot, segx, segy )
+	if ( !segx ) then segx = 1 end
+	if ( !segy ) then segy = 1 end
+	if ( rot > 0 ) then
+		for i = 1, rot do
+			local temp = x
+			x = y
+			y = -temp
+			if ( y < 0 ) then
+				y = y + 4
+			end
+
+			local temp = segx
+			segx = segy
+			segy = temp
+		end
+	end
+
+	local cell = ShipEditor.CellSize
+	local inner = cell / 3
+	surface.DrawRect(
+		( x - 1 ) * inner + ( segx - 1 ) * cell,
+		( y - 1 ) * inner + ( segy - 1 ) * cell,
+		inner + 1,
+		inner + 1
+	)
 end
 
 -- ShipEditor:CreateVGUI()

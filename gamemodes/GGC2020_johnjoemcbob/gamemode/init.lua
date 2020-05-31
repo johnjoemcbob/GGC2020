@@ -51,6 +51,8 @@ net.Receive( NET_SHIPEDITOR_SPAWN, function( len, ply )
 			Angle( 0, 90 * v.Rotation, 0 ),
 			false
 		)
+		local bright = 100
+		ent:SetColor( Color( bright, bright, bright, 255 ) )
 
 		if ( first ) then
 			ent:SetParent( first )
@@ -86,11 +88,13 @@ function GM:Think()
 	
 end
 
+-- engine.LightStyle( 0, "m" )
 function GM:HandlePlayerJumping( ply, vel )
-	if ( vel.z > 0 and !ply.JumpSound ) then
+	if ( vel.z != 0 and !ply.JumpSound ) then
 		ply.JumpSound = ply:StartLoopingSound( HOOK_PREFIX .. "JUMP" )
 
 		ply:ViewPunch( Angle( -5, 0, 0 ) )
+		util.Decal( "Scorch", ply:EyePos(), ply:GetPos() + Vector( 0, 0, -10 ), ply )
 
 		-- If moving at the same time, draw view backwards
 		local hor = Vector( vel.x, vel.y, 0 ):LengthSqr()
@@ -101,7 +105,8 @@ function GM:HandlePlayerJumping( ply, vel )
 		ply:StopLoopingSound( ply.JumpSound )
 		ply.JumpSound = nil
 
-		ply:EmitSound( "physics/metal/metal_canister_impact_soft2.wav", 75, math.random( 80, 120 ), 0.4 )
+		-- ply:EmitSound( "physics/metal/metal_canister_impact_soft2.wav", 75, math.random( 80, 120 ), 0.4 )
+		ply:EmitSound( "physics/metal/metal_barrel_impact_soft1.wav", 75, math.random( 40, 70 ), 0.4 )
 		ply:ViewPunch( Angle( 5, 0, 0 ) )
 		ply:SetFOV( ply.InitialFOV, 0.5 )
 	end
