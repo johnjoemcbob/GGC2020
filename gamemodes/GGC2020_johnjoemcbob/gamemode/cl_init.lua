@@ -10,9 +10,21 @@ include( "shared.lua" )
 include( "cl_modelcache.lua" )
 include( "cl_shipeditor.lua" )
 
-local MAT_PLAYER = Material( "playersheet.png", "smooth" )
-local MAT_PLAYER_WIDTH = 643
-local MAT_PLAYER_HEIGHT = 831
+local MAT_PLAYER = Material( "playersheet.png", "nocull 1 smooth 0" )
+	MAT_PLAYER:SetInt( "$flags", bit.bor( MAT_PLAYER:GetInt( "$flags" ), 2 ^ 8 ) )
+
+	local MAT_PLAYER_WIDTH = 643
+	local MAT_PLAYER_HEIGHT = 831
+	-- MAT_PLAYER:SetInt( "$flags", 2 ^ 3 )
+	-- MAT_PLAYER:SetInt( "$flags", bit.bor( MAT_PLAYER:GetInt( "$flags" ), 2 ^ 8 ) )
+
+local MAT_GUNS_FUTURE = Material( "guns_future.png", "nocull 1 smooth 0" )
+	MAT_GUNS_FUTURE:SetInt( "$flags", bit.bor( MAT_GUNS_FUTURE:GetInt( "$flags" ), 2 ^ 8 ) )
+
+	local MAT_GUNS_FUTURE_WIDTH = 1024
+	local MAT_GUNS_FUTURE_HEIGHT = 1024
+	local GUNSCALE = 0.3
+
 local PLAYER_WIDTH = 40
 local PLAYER_HEIGHT = 74
 local PLAYER_UV_WIDTH = 41
@@ -99,7 +111,27 @@ function GM:PrePlayerDraw( ply )
 				frame = math.floor( CurTime() * ( ANIMS[MAT_PLAYER][anim].Speed ) % #ANIMS[MAT_PLAYER][anim] + 1 )
 			end
 			-- local anim = "jump"
-		DrawWithUVs( -PLAYER_WIDTH / 2, -PLAYER_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT, MAT_PLAYER, anim, frame )
+		local left = ply.BillboardLeft
+			local dir = ply:GetVelocity():GetNormalized()
+			local angBetween = dir:Dot( LocalPlayer():GetAngles():Right() )
+			if ( angBetween != 0 ) then
+				left = angBetween < 0
+			end
+			ply.BillboardLeft = left
+		DrawPlayerWithUVs( -PLAYER_WIDTH / 2, -PLAYER_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT, MAT_PLAYER, anim, frame, left )
+
+		-- Draw weapon
+		local gun = ply:Get2DGun()
+		local start = gun[1]
+		local w = gun[2].x
+		local h = gun[2].y
+		local x = -PLAYER_WIDTH / 2
+		local y = -PLAYER_HEIGHT / 5 * 3 + 1 * frame
+
+		local scale = 1
+		surface.SetDrawColor( COLOUR_WHITE )
+		surface.SetMaterial( MAT_GUNS_FUTURE )
+		DrawWithUVs( x, y, w * scale * GUNSCALE, h * GUNSCALE, start.x / MAT_GUNS_FUTURE_WIDTH, start.y / MAT_GUNS_FUTURE_HEIGHT, ( start.x + w ) / MAT_GUNS_FUTURE_WIDTH, ( start.y + h ) / MAT_GUNS_FUTURE_HEIGHT, left )
 	cam.End3D2D()
 
 	return true
@@ -108,12 +140,44 @@ end
 function GM:HUDPaint()
 	render.SetLightingMode( 0 )
 end
+
+function GM:PreDrawViewModel( viewmodel, ply, weapon )
+	if ( !ply ) then return end
+
+	local gun = ply:Get2DGun()
+	local start = gun[1]
+	local w = gun[2].x
+	local h = gun[2].y
+
+	local scale = 2
+	local ang = LocalPlayer():EyeAngles()
+	local pos = LocalPlayer():EyePos() +
+		ang:Forward() * 90 +
+		ang:Right() * 8 +
+		ang:Up() * 3
+		-- ang.p = 0
+		-- ang.r = 0
+		-- ang:RotateAroundAxis( ang:Right(), 180 )
+		-- ang:RotateAroundAxis( ang:Up(), 180 )
+		-- ang:RotateAroundAxis( ang:Forward(), 180 )
+		-- ang:RotateAroundAxis( ang:Right(), 90 )
+		ang:RotateAroundAxis( ang:Up(), 180 + 5 )
+		ang:RotateAroundAxis( ang:Forward(), 90 )
+	cam.Start3D2D( pos, ang, 1 )
+		surface.SetDrawColor( COLOUR_WHITE )
+		-- surface.DrawRect( 0, 0, w, h )
+		surface.SetMaterial( MAT_GUNS_FUTURE )
+		surface.DrawTexturedRectUV( 0, 0, w * scale * GUNSCALE, h * GUNSCALE, start.x / MAT_GUNS_FUTURE_WIDTH, start.y / MAT_GUNS_FUTURE_HEIGHT, ( start.x + w ) / MAT_GUNS_FUTURE_WIDTH, ( start.y + h ) / MAT_GUNS_FUTURE_HEIGHT )
+	cam.End3D2D()
+
+	return true
+end
 -------------------------
   -- /Gamemode Hooks --
 -------------------------
 
 -- UV anims
-function DrawWithUVs( x, y, w, h, mat, anim, frame )
+function DrawPlayerWithUVs( x, y, w, h, mat, anim, frame, left )
 	-- 17 / 643, 94 / 831, ( 17 + 68 ) / 643, ( 94 + 68 ) / 831
 	local uvs = ANIMS[mat][anim][frame]
 	local u1 = uvs.x / MAT_PLAYER_WIDTH
@@ -123,5 +187,19 @@ function DrawWithUVs( x, y, w, h, mat, anim, frame )
 
 	surface.SetDrawColor( COLOUR_WHITE )
 	surface.SetMaterial( mat )
+	DrawWithUVs( x, y, w, h, u1, v1, u2, v2, left )
+end
+function DrawWithUVs( x, y, w, h, u1, v1, u2, v2, left )
+	if ( left ) then
+		local temp = u1
+		u1 = u2
+		u2 = temp
+	end
 	surface.DrawTexturedRectUV( x, y, w, h, u1, v1, u2, v2 )
+end
+
+local meta = FindMetaTable("Player")
+
+function meta:Get2DGun()
+	return { Vector( 103, 92 ), Vector( 176, 76 ) }
 end
