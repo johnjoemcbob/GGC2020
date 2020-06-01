@@ -38,84 +38,86 @@ COLOUR_BLACK = Color( 0, 0, 0, 255 )
 COLOUR_WHITE = Color( 255, 255, 255, 255 )
 COLOUR_LIT = Color( 255, 255, 255, 255 )
 COLOUR_UNLIT = Color( 100, 100, 100, 255 )
+COLOUR_GLASS = Color( 50, 100, 255, 255 )
 SHIPPART_SIZE = 128 + 22
-SHIPEDITOR_ORIGIN = function( ply )
-	return Vector( -489, 426, -21 + ( SHIPPART_SIZE + 4 ) * ( ply:GetIndex() - 1 ) )
+SHIPEDITOR_ORIGIN = function( index )
+	return Vector( -489, 426, -21 + ( SHIPPART_SIZE + 4 ) * ( index - 1 ) )
 end
 NET_SHIPEDITOR_SPAWN = "Net_ShipEditor_Spawn"
 
-local CORRWIDTH = 4
+local CORRWIDTH = 8
 SHIPPARTS = {
 	["x-111"] = {
 		"models/cerus/modbridge/core/x-111.mdl",
 		Vector( 1, 1, 1 ),
 		Vector( 0, 0, 0 ),
-		function( self, w, h )
-			-- surface.DrawRect( w / 2 - CORRWIDTH / 2, 0, CORRWIDTH, h )
-			-- surface.DrawRect( 0, h / 2 - CORRWIDTH / 2, w, CORRWIDTH )
-			AddRotatableSegment( 2, 1, w, h, self.Rotation )
-			AddRotatableSegment( 2, 2, w, h, self.Rotation )
-			AddRotatableSegment( 2, 3, w, h, self.Rotation )
-			AddRotatableSegment( 1, 2, w, h, self.Rotation )
-			AddRotatableSegment( 3, 2, w, h, self.Rotation )
+		function( self, x, y, w, h )
+			AddRotatableSegment( x, y, 2, 1, w, h, self.Rotation )
+			AddRotatableSegment( x, y, 2, 2, w, h, self.Rotation )
+			AddRotatableSegment( x, y, 2, 3, w, h, self.Rotation )
+			AddRotatableSegment( x, y, 1, 2, w, h, self.Rotation )
+			AddRotatableSegment( x, y, 3, 2, w, h, self.Rotation )
 		end,
 	},
 	["c-111"] = {
 		"models/cerus/modbridge/core/c-111.mdl",
 		Vector( 1, 1, 1 ),
 		Vector( 0, 0, 0 ),
-		function( self, w, h )
-			AddRotatableSegment( 1, 2, w, h, self.Rotation )
-			AddRotatableSegment( 2, 2, w, h, self.Rotation )
-			AddRotatableSegment( 2, 3, w, h, self.Rotation )
+		function( self, x, y, w, h )
+			AddRotatableSegment( x, y, 1, 2, w, h, self.Rotation )
+			AddRotatableSegment( x, y, 2, 2, w, h, self.Rotation )
+			AddRotatableSegment( x, y, 2, 3, w, h, self.Rotation )
 		end,
 	},
 	["s-111"] = {
 		"models/cerus/modbridge/core/s-111.mdl",
 		Vector( 1, 1, 1 ),
 		Vector( 0, 0, 0 ),
-		function( self, w, h )
-			AddRotatableSegment( 1, 2, w, h, self.Rotation )
-			AddRotatableSegment( 2, 2, w, h, self.Rotation )
-			AddRotatableSegment( 3, 2, w, h, self.Rotation )
+		function( self, x, y, w, h )
+			AddRotatableSegment( x, y, 1, 2, w, h, self.Rotation )
+			AddRotatableSegment( x, y, 2, 2, w, h, self.Rotation )
+			AddRotatableSegment( x, y, 3, 2, w, h, self.Rotation )
 		end,
 	},
 	["t-111"] = {
 		"models/cerus/modbridge/core/t-111.mdl",
 		Vector( 1, 1, 1 ),
 		Vector( 0, 0, 0 ),
-		function( self, w, h )
-			AddRotatableSegment( 1, 2, w, h, self.Rotation )
-			AddRotatableSegment( 2, 2, w, h, self.Rotation )
-			AddRotatableSegment( 2, 3, w, h, self.Rotation )
-			AddRotatableSegment( 3, 2, w, h, self.Rotation )
+		function( self, x, y, w, h )
+			AddRotatableSegment( x, y, 1, 2, w, h, self.Rotation )
+			AddRotatableSegment( x, y, 2, 2, w, h, self.Rotation )
+			AddRotatableSegment( x, y, 2, 3, w, h, self.Rotation )
+			AddRotatableSegment( x, y, 3, 2, w, h, self.Rotation )
 		end,
 	},
 	["sc-111"] = {
 		"models/cerus/modbridge/core/sc-111.mdl",
 		Vector( 1, 1, 1 ),
 		Vector( 0, 0, 0 ),
-		function( self, w, h )
-			AddRotatableSegment( 3, 2, w, h, self.Rotation )
+		function( self, x, y, w, h )
+			AddRotatableSegment( x, y, 3, 2, w, h, self.Rotation )
 		end,
 	},
 	["sc-g-111"] = {
 		"models/cerus/modbridge/core/sc-111g.mdl",
 		Vector( 1, 1, 1 ),
 		Vector( 0, 0, 0 ),
-		function( self, w, h )
-			AddRotatableSegment( 3, 2, w, h, self.Rotation )
+		function( self, x, y, w, h )
+			AddRotatableSegment( x, y, 3, 2, w, h, self.Rotation )
+			surface.SetDrawColor( COLOUR_GLASS )
+			AddRotatableSegment( x, y, 2, 2, w, h, self.Rotation )
 		end,
 	},
 	["s-311"] = {
 		"models/cerus/modbridge/core/s-311.mdl",
 		Vector( 3, 1, 1 ),
 		Vector( 0, 0, 0 ),
-		function( self, w, h )
-			for x = 1, 3 do
-				AddRotatableSegment( 1, 2, w, h, self.Rotation, x )
-				AddRotatableSegment( 2, 2, w, h, self.Rotation, x )
-				AddRotatableSegment( 3, 2, w, h, self.Rotation, x )
+		function( self, x, y, w, h )
+			local segs = 3
+			for segx = 1, segs do
+				AddRotatableSegment( x, y, 1, 2, w, h, self.Rotation, segx )
+				AddRotatableSegment( x, y, 2, 2, w, h, self.Rotation, segx )
+				AddRotatableSegment( x, y, 3, 2, w, h, self.Rotation, segx )
 			end
 		end,
 	},
@@ -123,9 +125,16 @@ SHIPPARTS = {
 		"models/cerus/modbridge/core/x-221.mdl",
 		Vector( 2, 2, 1 ),
 		Vector( -0.5, 0.5, 0 ),
-		function( self, w, h )
-			-- Just a big ol' square
-			surface.DrawRect( 0, 0, w, h )
+		function( self, x, y, w, h )
+			for segx = 1, 2 do
+				for segy = 1, 2 do
+					for cx = 1, 3 do
+						for cy = 1, 3 do
+							AddRotatableSegment( x, y, cx, cy, w / 2, h / 2, self.Rotation, segx, segy )
+						end
+					end
+				end
+			end
 		end,
 	},
 }
@@ -134,11 +143,15 @@ SHIPPARTS = {
 
 -- Includes (after globals)
 if ( SERVER ) then
+	AddCSLuaFile( "sh_netvar.lua" )
 	AddCSLuaFile( "sh_worldtext.lua" )
+	AddCSLuaFile( "sh_ship.lua" )
 end
+include( "sh_netvar.lua" )
 include( "sh_worldtext.lua" )
+include( "sh_ship.lua" )
 
-local meta = FindMetaTable("Player")
+local meta = FindMetaTable( "Player" )
 
 function meta:GetIndex()
 	local index = 1
@@ -191,8 +204,61 @@ function UnNaNAngle( angle, default )
 	return Angle( 0, 0, 0 )
 end
 
+-- function ClampVectorLength( vec, min, max )
+	-- min = min:
+	-- if ( vec:LengthSqr() < min
+	-- local dir = vec:GetNormalized()
+	-- local
+-- end
+
+function Clamp2DVectorLength( vec, min, max )
+	-- Square these instead of rooting the length
+	local minsqr = min * min
+	local maxsqr = max * max
+
+	local lensqr = vec:LengthSqr()
+	if ( lensqr < minsqr or lensqr > maxsqr ) then
+		-- At least don't have to sqrroot when inside range? idk
+		local len = vec:Length()
+
+		local dir = vec:GetNormalized()
+		return ( dir * math.Clamp( len, min, max ) )
+	else
+		return vec
+	end
+end
+
+function ApproachVector( change, current, target )
+	return Vector(
+		math.Approach( current.x, target.x, change ),
+		math.Approach( current.y, target.y, change ),
+		math.Approach( current.z, target.z, change )
+	)
+end
+
 function GetPrettyVector( vector )
 	return "Vector( " .. math.Round( vector.x ) .. ", " .. math.Round( vector.y ) .. " " .. math.Round( vector.z ) .. " )"
+end
+
+-- Make a shallow copy of a table (from http://lua-users.org/wiki/CopyTable)
+-- Extended for recursive tables
+function table.shallowcopy( orig )
+    local orig_type = type( orig )
+    local copy
+    if ( orig_type == "table" ) then
+        copy = {}
+        for orig_key, orig_value in pairs( orig ) do
+			if ( type( orig_value ) == "table" ) then
+				copy[orig_key] = table.shallowcopy( orig_value )
+			else
+				copy[orig_key] = orig_value
+			end
+        end
+	-- Number, string, boolean, etc
+    else
+        copy = orig
+    end
+    return copy
 end
 
 -- Create a physics prop which is frozen by default

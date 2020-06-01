@@ -25,7 +25,7 @@ hook.Add( "PostDrawOpaqueRenderables", HOOK_PREFIX .. "_ShipEditor_PostDrawOpaqu
 		for k, v in pairs( ShipEditor.ShipParts ) do
 			GAMEMODE.RenderCachedModel(
 				SHIPPARTS[v.Name][1],
-				SHIPEDITOR_ORIGIN( LocalPlayer() ) +
+				SHIPEDITOR_ORIGIN( #Ship.Ship + 1 ) +
 					Vector(
 						v.Grid.x + math.floor( v.Collisions.x / 2 ) + SHIPPARTS[v.Name][3].x,
 						-v.Grid.y - math.floor( v.Collisions.y / 2 ) + SHIPPARTS[v.Name][3].y
@@ -99,7 +99,13 @@ function ShipEditor.LoadShip( self )
 end
 
 function ShipEditor.SendToServer()
+	local tab = table.shallowcopy( ShipEditor.ShipParts )
+		for k, v in pairs( tab ) do
+			v.Collisions = nil
+		end
+	PrintTable( tab )
 	net.Start( NET_SHIPEDITOR_SPAWN )
+		net.WriteTable( tab )
 	net.SendToServer()
 end
 
@@ -181,14 +187,20 @@ function ShipEditor.CreateVGUI( self )
 				-- if ( isDropped ) then
 					local x, y = frm:GetPos()
 					for k, v in pairs( panels ) do
-						ShipEditor:AddPartSpawner( v.Name, v.Index )
+						-- If just picked up then create a new spawner
+						if ( !v.Added ) then
+							self.Spawners[v.Name] = nil
+							ShipEditor:AddPartSpawner( v.Name, v.Index, false, v.DefaultPos )
+						end
 
+						-- Drag/drop
 						local gx, gy = getgridpos( mouseX, mouseY )
 						if ( ShipEditor:CanDrop( v, gx, gy ) ) then
 							v.Grid = Vector( gx, gy )
 							self:OnDrop( v, true )
 						end
 
+						-- Track
 						v.Selected = !isDropped
 						self.GrabbedShipPart = v
 					end
@@ -267,15 +279,16 @@ end
 
 function ShipEditor.GetFirstFreeSpawnerPos( self, size )
 	local cols = #self.SpawnerListCollision
-	for x = 1, cols do
-		local rows = #self.SpawnerListCollision[x]
-		for y = 1, rows do
+	local rows = #self.SpawnerListCollision[1]
+	for y = 1, rows do
+		for x = 1, cols do
 			-- Check if all slots starting here to the size of the piece are free and empty
 			local free = true
 				for cx = 0, size.x - 1 do
 					for cy = 0, size.y - 1 do
 						local sx = x + cx
 						local sy = y + cy
+						-- Outside of grid or did collide
 						if ( ( sx > cols ) or ( sy > rows ) or self.SpawnerListCollision[sx][sy] ) then
 							free = false
 							break
@@ -293,33 +306,33 @@ function ShipEditor.GetFirstFreeSpawnerPos( self, size )
 					end
 				end
 
-				return Vector( x, y )
+				return Vector( x - 1, y - 1 )
 			end
 		end
 	end
 end
 
-function ShipEditor.AddPartSpawner( self, name, index, force )
+function ShipEditor.AddPartSpawner( self, name, index, force, pos )
 	-- if ( !self.CellSize ) then return end
 
 	local spawner
-		local pos
 			-- if ( self.Spawners[name] ) then
 				-- pos = self.Spawners[name].DefaultPos
-				if ( self.GrabbedShipPart != self.Spawners[name] and !force ) then
+				if ( self.Spawners[name] and !force ) then
 					return self.Spawners[name]
 				end
 			-- else
+			if ( !pos ) then
 				pos = self:GetFirstFreeSpawnerPos( SHIPPARTS[name][2] )
-			-- end
+				pos.x = 10 + pos.x * self.CellSize
+				pos.y = 10 + pos.y * self.CellSize
+			end
 		if ( !index ) then
 			index = tablelength( self.Spawners )
 		end
 
 		-- if ( !self.Spawners[name] or force ) then
 			spawner = vgui.Create( "DPanel", self.Right )
-				pos.x = 10 + pos.x * self.CellSize
-				pos.y = 10 + pos.y * self.CellSize
 				spawner:SetPos( pos.x, pos.y )
 				spawner:SetSize( self.CellSize * SHIPPARTS[name][2].x, self.CellSize * SHIPPARTS[name][2].y )
 				spawner:Droppable( DRAGDROP_SHIP )
@@ -332,7 +345,7 @@ function ShipEditor.AddPartSpawner( self, name, index, force )
 						if ( spawner.Selected ) then
 							surface.SetDrawColor( Color( 255, 0, 0, 255 ) )
 						end
-						SHIPPARTS[name][4]( self, w, h )
+						SHIPPARTS[name][4]( self, 0, 0, w, h )
 					end
 				end
 				spawner.Name = name
@@ -419,16 +432,16 @@ function ShipEditor.SetCollision( self, v, on )
 	end
 end
 
-function AddRotatableSegment( x, y, w, h, rot, segx, segy )
+function AddRotatableSegment( x, y, gx, gy, w, h, rot, segx, segy )
 	if ( !segx ) then segx = 1 end
 	if ( !segy ) then segy = 1 end
 	if ( rot > 0 ) then
 		for i = 1, rot do
-			local temp = x
-			x = y
-			y = -temp
-			if ( y < 0 ) then
-				y = y + 4
+			local temp = gx
+			gx = gy
+			gy = -temp
+			if ( gy < 0 ) then
+				gy = gy + 4
 			end
 
 			local temp = segx
@@ -437,11 +450,11 @@ function AddRotatableSegment( x, y, w, h, rot, segx, segy )
 		end
 	end
 
-	local cell = ShipEditor.CellSize
+	local cell = math.min( w, h )
 	local inner = cell / 3
 	surface.DrawRect(
-		( x - 1 ) * inner + ( segx - 1 ) * cell,
-		( y - 1 ) * inner + ( segy - 1 ) * cell,
+		x + ( gx - 1 ) * inner + ( segx - 1 ) * cell,
+		y + ( gy - 1 ) * inner + ( segy - 1 ) * cell,
 		inner + 1,
 		inner + 1
 	)

@@ -30,64 +30,7 @@ sound.Add( {
 } )
 
 -- Net
-util.AddNetworkString( NET_SHIPEDITOR_SPAWN )
-net.Receive( NET_SHIPEDITOR_SPAWN, function( len, ply )
-	-- Load ship data
-	local json = file.Read( HOOK_PREFIX .. "/ship.txt" )
-	local tab = util.JSONToTable( json )
 
-	-- Clear old
-	if ( ply.Ship ) then
-		for k, part in pairs( ply.Ship ) do
-			if ( part and part:IsValid() ) then
-				part:Remove()
-			end
-		end
-	end
-
-	-- Generate new
-	local first = nil
-	ply.Ship = {}
-	for k, v in pairs ( tab ) do
-		local part = SHIPPARTS[v.Name]
-			v.Collisions = part[2]
-			if ( v.Rotation % 2 != 0 ) then
-				v.Collisions = Vector( v.Collisions.y, v.Collisions.x )
-			end
-		local ent = GAMEMODE.CreateProp(
-			part[1],
-			SHIPEDITOR_ORIGIN( ply ) +
-				Vector(
-					v.Grid.x + math.floor( v.Collisions.x / 2 ) + part[3].x,
-					-v.Grid.y - math.floor( v.Collisions.y / 2 ) + part[3].y
-				) * SHIPPART_SIZE,
-			Angle( 0, 90 * v.Rotation, 0 ),
-			false
-		)
-		ent:SetColor( COLOUR_UNLIT )
-		table.insert( ply.Ship, ent )
-
-		-- Temp testing
-		if ( math.random( 1, 2 ) == 1 ) then
-			local npc = GAMEMODE.CreateEnt( "npc_combine_s", nil, ent:GetPos(), Angle( 0, 0, 0 ) )
-				npc:Give( "weapon_ar2" )
-				npc:SetHealth( 20 )
-				-- npc:SetNoDraw( true )
-				-- npc:GiveAmmo( 2000, "AR2" )
-			table.insert( ply.Ship, npc )
-		else
-			ply.SpawnPoint = ent:GetPos() - Vector( 0, 0, 32 )
-			ply:SetPos( ply.SpawnPoint )
-			ply:SetHealth( ply:GetMaxHealth() )
-		end
-
-		if ( first ) then
-			-- ent:SetParent( first )
-		else
-			first = ent
-		end
-	end
-end )
 
 ------------------------
   -- Gamemode Hooks --
@@ -115,8 +58,9 @@ hook.Add( "PlayerSpawn", HOOK_PREFIX .. "PlayerSpawn", function( ply )
 		ply:Give( "weapon_ar2" )
 		ply:GiveAmmo( 2000, "AR2" )
 
-		if ( ply.SpawnPoint ) then
-			ply:SetPos( ply.SpawnPoint )
+		local ship = ply:GetNWInt( "CurrentShip", -1 )
+		if ( ship >= 0 ) then
+			ply:SetPos( Ship.Ship[ship].SpawnPoint )
 		end
 	end )
 end )
