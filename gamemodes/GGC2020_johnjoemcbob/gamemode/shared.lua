@@ -143,16 +143,17 @@ SHIPPARTS = {
 
 -- Includes (after globals)
 if ( SERVER ) then
+	AddCSLuaFile( "sh_util.lua" )
 	AddCSLuaFile( "sh_netvar.lua" )
 	AddCSLuaFile( "sh_worldtext.lua" )
 	AddCSLuaFile( "sh_ship.lua" )
 end
+include( "sh_util.lua" )
 include( "sh_netvar.lua" )
 include( "sh_worldtext.lua" )
 include( "sh_ship.lua" )
 
 local meta = FindMetaTable( "Player" )
-
 function meta:GetIndex()
 	local index = 1
 		for k, v in pairs( player.GetAll() ) do
@@ -175,126 +176,4 @@ function GM:PlayerFootstep( ply, pos, foot, sound, volume, rf )
 		GAMEMODE.AddWorldText( pos + Vector( 0, 0, 5 ), Vector( 0, 0, 0 ), Angle( 0, 0, 0 ), 0.1, "tum", 0.5, false )
 	end
 	return true
-end
-
--- TODO move to util
-function tablelength(T)
-  local count = 0
-  for _ in pairs(T) do count = count + 1 end
-  return count
-end
-function UnNaNVector( vector, default )
-	-- NaN isn't equal to itself
-	if ( vector and vector.x == vector.x and vector.y == vector.y and vector.z == vector.z ) then
-		return vector
-	end
-	if ( default ) then
-		return default
-	end
-	return Vector( 0, 0, 0 )
-end
-function UnNaNAngle( angle, default )
-	-- NaN isn't equal to itself
-	if ( angle and angle.x == angle.x and angle.y == angle.y and angle.z == angle.z ) then
-		return angle
-	end
-	if ( default ) then
-		return default
-	end
-	return Angle( 0, 0, 0 )
-end
-
--- function ClampVectorLength( vec, min, max )
-	-- min = min:
-	-- if ( vec:LengthSqr() < min
-	-- local dir = vec:GetNormalized()
-	-- local
--- end
-
-function Clamp2DVectorLength( vec, min, max )
-	-- Square these instead of rooting the length
-	local minsqr = min * min
-	local maxsqr = max * max
-
-	local lensqr = vec:LengthSqr()
-	if ( lensqr < minsqr or lensqr > maxsqr ) then
-		-- At least don't have to sqrroot when inside range? idk
-		local len = vec:Length()
-
-		local dir = vec:GetNormalized()
-		return ( dir * math.Clamp( len, min, max ) )
-	else
-		return vec
-	end
-end
-
-function ApproachVector( change, current, target )
-	return Vector(
-		math.Approach( current.x, target.x, change ),
-		math.Approach( current.y, target.y, change ),
-		math.Approach( current.z, target.z, change )
-	)
-end
-
-function GetPrettyVector( vector )
-	return "Vector( " .. math.Round( vector.x ) .. ", " .. math.Round( vector.y ) .. " " .. math.Round( vector.z ) .. " )"
-end
-
--- Make a shallow copy of a table (from http://lua-users.org/wiki/CopyTable)
--- Extended for recursive tables
-function table.shallowcopy( orig )
-    local orig_type = type( orig )
-    local copy
-    if ( orig_type == "table" ) then
-        copy = {}
-        for orig_key, orig_value in pairs( orig ) do
-			if ( type( orig_value ) == "table" ) then
-				copy[orig_key] = table.shallowcopy( orig_value )
-			else
-				copy[orig_key] = orig_value
-			end
-        end
-	-- Number, string, boolean, etc
-    else
-        copy = orig
-    end
-    return copy
-end
-
--- Create a physics prop which is frozen by default
--- Model (String), Position (Vector), Angle (Angle), Should Move? (bool)
-function GM.CreateProp( mod, pos, ang, mov )
-	local ent = ents.Create( "prop_physics" )
-		ent:SetModel( mod )
-		ent:SetPos( pos )
-		ent:SetAngles( ang )
-		ent:Spawn()
-		if ( !mov ) then
-			local phys = ent:GetPhysicsObject()
-			if ( phys and phys:IsValid() ) then
-				phys:EnableMotion( false )
-			end
-		end
-	return ent
-end
-
--- Create an ent which is frozen by default
--- Class (String), Model (String), Position (Vector), Angle (Angle), Should Move? (bool), Should auto spawn? (bool)
-function GM.CreateEnt( class, mod, pos, ang, mov, nospawn )
-	local ent = ents.Create( class )
-		if ( mod ) then
-			ent:SetModel( mod )
-		end
-		ent:SetPos( pos )
-		ent:SetAngles( ang )
-		if ( !nospawn ) then
-			ent:Spawn()
-		end
-		if ( !mov ) then
-			local phys = ent:GetPhysicsObject()
-			if ( phys and phys:IsValid() ) then
-				phys:EnableMotion( false )
-			end
-		end
-	return ent
 end

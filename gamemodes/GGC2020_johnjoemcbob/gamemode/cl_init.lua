@@ -188,6 +188,36 @@ end
 
 function GM:HUDPaint()
 	render.SetLightingMode( 0 )
+
+	-- For each ship
+		-- TODO function to get ship bounds
+		-- Test against every other ship
+			-- If collision then change colour
+
+	-- Testing collision + rotation code!
+	-- local x = ScrW() / 4 * 3
+	-- local y = ScrH() / 2
+	-- local w = 64
+	-- local h = 32
+	-- local a = { x, y, w, h, 0 }
+	-- local b = {
+		-- x + math.sin( CurTime() ) * w * 2,
+		-- y + math.cos( CurTime() + 1 ) * h * 2,
+		-- w, h,
+		-- math.sin( CurTime() + 2 ) * 360
+	-- }
+	-- local b = {
+		-- gui.MouseX(),
+		-- gui.MouseY(),
+		-- w, h,
+		-- math.sin( CurTime() + 2 ) * 360
+	-- }
+	-- surface.SetDrawColor( COLOUR_WHITE )
+	-- if ( intersect_squares( a, b ) ) then
+		-- surface.SetDrawColor( COLOUR_GLASS )
+	-- end
+	-- surface.DrawTexturedRectRotated( a[1], a[2], a[3], a[4], a[5] )
+	-- surface.DrawTexturedRectRotated( b[1], b[2], b[3], b[4], b[5] )
 end
 
 function GM:PreDrawViewModel( viewmodel, ply, weapon )

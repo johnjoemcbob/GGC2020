@@ -112,6 +112,15 @@ if ( SERVER ) then
 	end
 
 	-- Gamemode Hooks
+	hook.Add( "PlayerInitialSpawn", HOOK_PREFIX .. "Ship_PlayerInitialSpawn", function( ply )
+		print( "try to sync existing ships!" )
+		for k, ship in pairs( Ship.Ship ) do
+			print( "syncing ship... " .. tostring( k ) )
+			Ship:SendToClient( ship )
+		end
+		print( "done syncing!" )
+	end )
+
 	hook.Add( "Think", HOOK_PREFIX .. "Ship_Think", function()
 		for k, ply in pairs( player.GetAll() ) do
 			local ship = ply:GetNWInt( "CurrentShip", -1 )
@@ -149,21 +158,39 @@ if ( CLIENT ) then
 				local sh = sw
 				local sx = x + w / 2
 				local sy = y + h / 2
-				surface.SetDrawColor( COLOUR_WHITE )
-				surface.DrawLine( sx, sy, sx + ship:Get2DVelocity().x, sy - ship:Get2DVelocity().y )
+
+				-- Draw grid for telling movement is happening
+				surface.SetDrawColor( Color( 255, 255, 255, 5 ) )
+				local cells = 16
+				for cx = 1, cells do
+					local cx = x + cx * sw - ship:Get2DPos().x % sw
+					local cy = y
+					surface.DrawLine( cx, cy, cx, cy + h )
+				end
+				for cy = 1, cells do
+					local cx = x
+					local cy = y + cy * sh - ship:Get2DPos().y % sw
+					surface.DrawLine( cx, cy, cx + w, cy )
+				end
+
+				-- Debug lines
+					surface.SetDrawColor( COLOUR_WHITE )
+					surface.DrawLine( sx, sy, sx + ship:Get2DVelocity().x, sy + ship:Get2DVelocity().y )
+
+					surface.SetDrawColor( Color( 255, 0, 0, 255 ) )
+					surface.DrawLine( sx, sy, sx + ship:Forward().x * 100, sy + ship:Forward().y * 100 )
+
+				-- Player ship
 				surface.SetDrawColor( COLOUR_GLASS )
 				ship:HUDPaint( sx - sw / 2, sy - sw / 2, sw )
-				-- surface.DrawRect( sx - sw / 2, sy - sw / 2, sw, sh )
-				-- draw.SimpleText( ship:Get2DPos(), "DermaDefault", sx, sy, COLOUR_GLASS )
-				-- draw.SimpleText( ship:Get2DVelocity(), "DermaDefault", sx, sy + 16, COLOUR_GLASS )
 
 				-- Draw all other ships based on this position
 				for k, other in pairs( Ship.Ship ) do
 					if ( other != ship ) then
 						local sx = sx + ( other:Get2DPos().x - ship:Get2DPos().x )
-						local sy = sy - ( other:Get2DPos().y - ship:Get2DPos().y )
+						local sy = sy + ( other:Get2DPos().y - ship:Get2DPos().y )
 						surface.SetDrawColor( COLOUR_WHITE )
-						ship:HUDPaint( sx, sy, sw )
+						other:HUDPaint( sx, sy, sw )
 					end
 				end
 			end

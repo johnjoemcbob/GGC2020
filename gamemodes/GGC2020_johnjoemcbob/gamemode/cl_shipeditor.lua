@@ -460,4 +460,4 @@ function AddRotatableSegment( x, y, gx, gy, w, h, rot, segx, segy )
 	)
 end
 
-ShipEditor:CreateVGUI()
+-- ShipEditor:CreateVGUI()
