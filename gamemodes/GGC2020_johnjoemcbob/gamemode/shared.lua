@@ -34,13 +34,14 @@ GM.ShipPartModels		= {
 }
 -- Convert from 1 to 3 = models/cerus/modbridge/core/spartan/cv-11-31.mdl
 HOOK_PREFIX = "GGC2020_johnjoemcbob_"
-COLOUR_BLACK = Color( 0, 0, 0, 255 )
-COLOUR_WHITE = Color( 255, 255, 255, 255 )
-COLOUR_LIT = Color( 255, 255, 255, 255 )
-COLOUR_UNLIT = Color( 100, 100, 100, 255 )
-COLOUR_GLASS = Color( 50, 100, 255, 255 )
-SHIPPART_SIZE = 128 + 22
-SHIPEDITOR_ORIGIN = function( index )
+COLOUR_BLACK		= Color( 0, 0, 0, 255 )
+COLOUR_WHITE		= Color( 255, 255, 255, 255 )
+COLOUR_LIT			= Color( 255, 255, 255, 255 )
+COLOUR_UNLIT		= Color( 100, 100, 100, 255 )
+COLOUR_GLASS		= Color( 50, 100, 255, 255 )
+SHIPPART_SIZE		= 128 + 22
+SHIPPART_SIZE_2D	= 4
+SHIPEDITOR_ORIGIN	= function( index )
 	return Vector( -489, 426, -21 + ( SHIPPART_SIZE + 4 ) * ( index - 1 ) )
 end
 NET_SHIPEDITOR_SPAWN = "Net_ShipEditor_Spawn"

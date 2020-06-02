@@ -98,43 +98,60 @@ function ENT:Think()
 		self.LateInitialized = true
 	end
 
+	-- Calculate the max bounds of the ship to get center
+	if ( !self.Size ) then
+		local min = Vector( 100, 100 )
+		local max = Vector( 0, 0 )
+			for k, part in pairs( self.Constructor ) do
+				if ( part.Grid.x < min.x ) then
+					min.x = part.Grid.x
+				end
+				if ( part.Grid.x > max.x ) then
+					max.x = part.Grid.x
+				end
+				if ( part.Grid.y < min.y ) then
+					min.y = part.Grid.y
+				end
+				if ( part.Grid.y > max.y ) then
+					max.y = part.Grid.y
+				end
+			end
+		self.Min = min
+		self.Max = max
+		self.Size = Vector( max.x - min.x, max.y - min.y )
+	end
+
 	if ( SERVER ) then
 		self:Set2DPos( self:Get2DPos() + self:Get2DVelocity() * FrameTime() )
+
+		if ( Ship:CheckCollision( self ) ) then
+			print( tostring( self ) .. " " )
+		end
 	end
 end
 
 if ( CLIENT ) then
-	function ENT:HUDPaint( x, y, scale )
-		local cellsize = 6
-		surface.SetDrawColor( COLOUR_WHITE )
+	function ENT:HUDPaint( x, y, scale, col )
+		col = table.shallowcopy( col ) -- TODO TEMP REMOVE
+		col.a = 100 -- TODO TEMP REMOVE
+
+		local cellsize = SHIPPART_SIZE_2D
+		-- surface.SetDrawColor( COLOUR_WHITE )
 		if ( self.Constructor ) then
-			-- Calculate the max bounds of the ship to get center
-			if ( !self.Size ) then
-				local min = Vector( 0, 0 )
-				local max = Vector( 0, 0 )
-					for k, part in pairs( self.Constructor ) do
-						if ( part.Grid.x < min.x ) then
-							min.x = part.Grid.x
-						end
-						if ( part.Grid.x > max.x ) then
-							max.x = part.Grid.x
-						end
-						if ( part.Grid.y < min.y ) then
-							min.y = part.Grid.y
-						end
-						if ( part.Grid.y > max.y ) then
-							max.y = part.Grid.y
-						end
-					end
-				self.Size = Vector( max.x - min.x, max.y - min.y )
-			end
 			-- print( self.Size )
 			-- local center = Vector( 
 
 			local mat = Matrix()
-				mat:Translate( Vector( x, y ) )
-				mat:Rotate( Angle( 0, self:Get2DRotation(), 0 ) )
-				mat:Translate( Vector( -( self.Size.x / 2 * cellsize ), -( self.Size.y * cellsize / 2 ) ) )
+				
+				-- Translate back onto vgui
+				mat:Rotate( Angle( 0, 0, 90 ) )
+				mat:Translate( Vector( 44, 180 + cellsize * 15, -48 ) )
+				mat:Translate( Vector( x, -y ) )
+				mat:Rotate( Angle( 0, -self:Get2DRotation(), 0 ) )
+				mat:Translate( Vector(
+					-( self.Size.x * cellsize ),
+					-( self.Size.y * cellsize )
+				) )
 			cam.PushModelMatrix( mat )
 				local index = 0
 				for k, part in pairs( self.Constructor ) do
@@ -142,7 +159,7 @@ if ( CLIENT ) then
 					local h = cellsize * SHIPPARTS[part.Name][2].y
 					-- surface.SetDrawColor( Color( math.random( 0, 255 ), math.random( 0, 255 ), math.random( 0, 255 ), 255 ) )
 						if ( false ) then
-							surface.SetDrawColor( COLOUR_WHITE )
+							surface.SetDrawColor( col )
 							-- for cx = 0, SHIPPARTS[part.Name][2].x - 1 do
 								-- for cy = 0, SHIPPARTS[part.Name][2].y - 1 do
 									local cx = SHIPPARTS[part.Name][2].x
@@ -164,7 +181,7 @@ if ( CLIENT ) then
 								-- end
 							-- end
 						else
-							surface.SetDrawColor( COLOUR_GLASS )
+							surface.SetDrawColor( col )
 							SHIPPARTS[part.Name][4](
 								part,
 								( part.Grid.x ) * cellsize,
@@ -176,8 +193,8 @@ if ( CLIENT ) then
 			cam.PopModelMatrix()
 		end
 
-		draw.SimpleText( self:Get2DPos(), "DermaDefault", x, y + 32, Color( 255, 255, 255, 10 ) )
-		draw.SimpleText( self:Get2DVelocity(), "DermaDefault", x, y + 44, Color( 255, 255, 255, 10 ) )
+		-- draw.SimpleText( self:Get2DPos(), "DermaDefault", x, y + 32, Color( 255, 255, 255, 10 ) )
+		-- draw.SimpleText( self:Get2DVelocity(), "DermaDefault", x, y + 44, Color( 255, 255, 255, 10 ) )
 	end
 end
 

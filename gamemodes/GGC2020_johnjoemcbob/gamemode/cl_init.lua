@@ -5,13 +5,15 @@
 -- Main Clientside
 --
 
+include( "includes/modules/3d2dvgui.lua" )
+
 include( "shared.lua" )
 
 include( "cl_modelcache.lua" )
 include( "cl_shipeditor.lua" )
 
 local MAT_PLAYER = Material( "playersheet.png", "nocull 1 smooth 0" )
-	MAT_PLAYER:SetInt( "$flags", bit.bor( MAT_PLAYER:GetInt( "$flags" ), 2 ^ 8 ) )
+	-- MAT_PLAYER:SetInt( "$flags", bit.bor( MAT_PLAYER:GetInt( "$flags" ), 2 ^ 8 ) )
 
 	local MAT_PLAYER_WIDTH = 643
 	local MAT_PLAYER_HEIGHT = 831
@@ -19,7 +21,7 @@ local MAT_PLAYER = Material( "playersheet.png", "nocull 1 smooth 0" )
 	-- MAT_PLAYER:SetInt( "$flags", bit.bor( MAT_PLAYER:GetInt( "$flags" ), 2 ^ 8 ) )
 
 local MAT_GUNS_FUTURE = Material( "guns_future.png", "nocull 1 smooth 0" )
-	MAT_GUNS_FUTURE:SetInt( "$flags", bit.bor( MAT_GUNS_FUTURE:GetInt( "$flags" ), 2 ^ 8 ) )
+	-- MAT_GUNS_FUTURE:SetInt( "$flags", bit.bor( MAT_GUNS_FUTURE:GetInt( "$flags" ), 2 ^ 8 ) )
 
 	local MAT_GUNS_FUTURE_WIDTH = 1024
 	local MAT_GUNS_FUTURE_HEIGHT = 1024
@@ -162,12 +164,12 @@ function GM:PrePlayerDraw( ply )
 	local reloading = false
 		if ( ply:GetActiveWeapon() and ply:GetActiveWeapon():IsValid() ) then
 			reloading = ( ply:GetActiveWeapon():GetActivity() == ACT_RELOAD ) or ( ply:GetActiveWeapon():GetActivity() == ACT_VM_RELOAD )
-			print( ply:GetActiveWeapon():GetActivity() )
+			-- print( ply:GetActiveWeapon():GetActivity() )
 		end
 		if ( reloading ) then
 			ply.ReloadingProgress = ply.ReloadingProgress + FrameTime()
 			ang:RotateAroundAxis( ang:Right(), ply.ReloadingProgress )
-			print( ply.ReloadingProgress )
+			-- print( ply.ReloadingProgress )
 		else
 			ply.ReloadingProgress = 0
 		end
@@ -348,6 +350,24 @@ end
 
 function Get2DGun()
 	return { Vector( 103, 92 ), Vector( 176, 76 ) }
+end
+
+function draw.StencilBasic( mask, inner )
+	render.ClearStencil()
+	render.SetStencilEnable( true )
+		render.SetStencilWriteMask( 255 )
+		render.SetStencilTestMask( 255 )
+		render.SetStencilFailOperation( STENCILOPERATION_KEEP )
+		render.SetStencilZFailOperation( STENCILOPERATION_REPLACE )
+		render.SetStencilPassOperation( STENCILOPERATION_REPLACE )
+		render.SetStencilCompareFunction( STENCILCOMPARISONFUNCTION_ALWAYS )
+		render.SetBlend( 0 ) --makes shit invisible
+		render.SetStencilReferenceValue( 10 )
+			mask()
+		render.SetBlend( 1 )
+		render.SetStencilCompareFunction( STENCILCOMPARISONFUNCTION_EQUAL )
+			inner()
+	render.SetStencilEnable( false )
 end
 
 concommand.Add( "ggcj_getpos", function( ply, cmd, args )

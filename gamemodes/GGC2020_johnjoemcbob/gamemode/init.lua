@@ -8,6 +8,8 @@
 -- LUA Downloads
 AddCSLuaFile( "shared.lua" )
 
+AddCSLuaFile( "includes/modules/3d2dvgui.lua" )
+
 AddCSLuaFile( "cl_init.lua" )
 AddCSLuaFile( "cl_modelcache.lua" )
 AddCSLuaFile( "cl_shipeditor.lua" )
@@ -17,7 +19,7 @@ include( "shared.lua" )
 
 -- Resources
 resource.AddFile( "materials/playersheet.png" )
-resource.AddFile( "materials/gun_future.png" )
+resource.AddFile( "materials/guns_future.png" )
 resource.AddFile( "materials/muzzleflash.png" )
 
 sound.Add( {
@@ -76,7 +78,6 @@ hook.Add( "PlayerDeathThink", HOOK_PREFIX .. "PlayerDeathThink", function( ply )
 	end
 end )
 
--- engine.LightStyle( 0, "m" )
 function GM:HandlePlayerJumping( ply, vel )
 	if ( vel.z != 0 and !ply.JumpSound ) then
 		ply.JumpSound = ply:StartLoopingSound( HOOK_PREFIX .. "JUMP" )
@@ -109,7 +110,6 @@ end
 -------------------------
 
 concommand.Add( "ggcj_testbutton", function( ply, cmd, args )
-	-- local tr =
 	local tr = util.TraceLine( {
 		start = ply:EyePos(),
 		endpos = ply:EyePos() + ply:EyeAngles():Forward() * 10000,
@@ -122,19 +122,27 @@ concommand.Add( "ggcj_testbutton", function( ply, cmd, args )
 	local ent = GAMEMODE.CreateEnt( "ggcj_button", "models/maxofs2d/button_04.mdl", tr.HitPos, ang, false )
 	ent:SetIsToggle( true )
 	ent.OnTurnOn = function( self, ply )
-		if ( ply.Ship ) then
-			for k, part in pairs( ply.Ship ) do
-				if ( part and part:IsValid() ) then
-					part:SetColor( COLOUR_LIT )
+		local ship = ply:GetNWInt( "CurrentShip", -1 )
+		if ( ship >= 0 ) then
+			local ship = Ship.Ship[ship]
+			if ( ship and ship:IsValid() ) then
+				for k, part in pairs( ship.Parts ) do
+					if ( part and part:IsValid() ) then
+						part:SetColor( COLOUR_LIT )
+					end
 				end
 			end
 		end
 	end
 	ent.OnTurnOff = function( self, ply )
-		if ( ply.Ship ) then
-			for k, part in pairs( ply.Ship ) do
-				if ( part and part:IsValid() ) then
-					part:SetColor( COLOUR_UNLIT )
+		local ship = ply:GetNWInt( "CurrentShip", -1 )
+		if ( ship >= 0 ) then
+			local ship = Ship.Ship[ship]
+			if ( ship and ship:IsValid() ) then
+				for k, part in pairs( ship.Parts ) do
+					if ( part and part:IsValid() ) then
+						part:SetColor( COLOUR_UNLIT )
+					end
 				end
 			end
 		end

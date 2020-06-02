@@ -84,7 +84,7 @@ function ApproachVector( change, current, target )
 end
 
 function GetPrettyVector( vector )
-	return "Vector( " .. math.Round( vector.x ) .. ", " .. math.Round( vector.y ) .. " " .. math.Round( vector.z ) .. " )"
+	return "Vector( " .. math.Round( vector.x ) .. ", " .. math.Round( vector.y ) .. ", " .. math.Round( vector.z ) .. " )"
 end
 
 function rotate_point( pointX, pointY, originX, originY, angle )
@@ -100,14 +100,20 @@ function getpolygonfromsquare( x, y, w, h, ang )
 		-- Convert to 4 line polygon
 		local o = { x + w / 2, y + h / 2 }
 		local lines = {
-			{ x, y },
-			{ x + w, y },
-			{ x + w, y + h },
-			{ x, y + h },
+			rotate_point( x, y, o[1], o[2], -ang ),
+			rotate_point( x + w, y, o[1], o[2], -ang ),
+			rotate_point( x + w, y + h, o[1], o[2], -ang ),
+			rotate_point( x, y + h, o[1], o[2], -ang ),
 		}
-		for k, point in pairs( lines ) do
-			local rotated = rotate_point( point[1], point[2], o[1], o[2], -ang )
+		for k, rotated in pairs( lines ) do
 			table.insert( poly, rotated )
+
+			-- surface.DrawCircle( rotated[1] - w / 2, rotated[2] - w / 2, 4, Color( 255, 120, 0 ) )
+			local next = k + 1
+				if ( k == 4 ) then
+					next = 1
+				end
+			-- surface.DrawLine( rotated[1] - w / 2, rotated[2] - h / 2, lines[next][1] - w / 2, lines[next][2] - h / 2 )
 		end
 	return poly
 end
@@ -121,7 +127,7 @@ function intersect_squares( a, b )
 end
 
 -- https://stackoverflow.com/questions/10962379/how-to-check-intersection-between-2-rotated-rectangles
-math.inf = 100000
+math.inf = 10000000
 function intersect_polygons( a, b )
 	polygons = {a,b}
 	for i=1, #polygons do
