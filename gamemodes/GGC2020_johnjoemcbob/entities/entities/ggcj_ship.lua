@@ -168,7 +168,16 @@ function ENT:OnCollisionStart( other )
 	-- Temp measure to only board in one direction
 	if ( self:GetIndex() < other ) then
 		-- Board!!
-		
+		print( "BOARD " .. other )
+		for k, ply in pairs( player.GetAll() ) do
+			if ( ply:GetNWInt( "CurrentShip" ) == self:GetIndex() ) then
+				if ( ply:InVehicle() ) then
+					ply:ExitVehicle()
+				end
+				ply:SetPos( Ship.Ship[other].SpawnPoint )
+				PrintMessage( HUD_PRINTCENTER, "BOARDING" )
+			end
+		end
 	end
 
 	-- Shake
