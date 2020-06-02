@@ -266,6 +266,9 @@ function GM:CalcView( ply, pos, ang, fov )
 	local view = {}
 	view.origin = pos
 	view.angles = ang
+		if ( ply:InVehicle() ) then
+			view.angles = Angle( 0, 90, 0 )
+		end
 	view.fov = fov
 	view.zfar = 1000
 

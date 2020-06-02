@@ -40,7 +40,7 @@ COLOUR_LIT			= Color( 255, 255, 255, 255 )
 COLOUR_UNLIT		= Color( 100, 100, 100, 255 )
 COLOUR_GLASS		= Color( 50, 100, 255, 255 )
 SHIPPART_SIZE		= 128 + 22
-SHIPPART_SIZE_2D	= 4
+SHIPPART_SIZE_2D	= 2
 SHIPEDITOR_ORIGIN	= function( index )
 	return Vector( -489, 426, -21 + ( SHIPPART_SIZE + 4 ) * ( index - 1 ) )
 end

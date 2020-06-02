@@ -19,8 +19,9 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Int", 0, "Index" )
 
 	-- self:SetIndex( -1 )
-	self:Set2DPos( Vector( 0, 0, 0 ) )
-	self:Set2DVelocity( Vector( 0, 0, 0 ) )
+	local range = 20
+	self:Set2DPos( Vector( math.random( -range, range ), math.random( -range, range ) ) )
+	self:Set2DVelocity( Vector( 0, 0 ) )
 	self:Set2DRotation( 0 )
 	-- self:Set2DSpeed( 0 )
 end
@@ -33,6 +34,7 @@ function ENT:Initialize()
 	end
 
 	self.Parts = {}
+	self.CurrentCollisions = {}
 	self.LateInitialized = false
 	self.Speed = 0
 
@@ -44,29 +46,42 @@ function ENT:Initialize()
 end
 
 function ENT:MoveInput( ply )
+	if ( tablelength( self.CurrentCollisions ) > 0 ) then return end
+
+	-- Rotation
+	-- local dir = ( Vector( 100, 100 ) - Vector( x, y ) ):GetNormalized()
+	-- self:Set2DRotation( -math.atan2( dir.x, dir.y ) * 180 / math.pi )
+	local pos = self:GetMapPos( ply )
+	local vec, ang = WorldToLocal( pos, Angle( 0, 0, 0 ), ply:EyePos(), ply:EyeAngles() )
+	local dir = -( Vector( vec.y, vec.z ) - Vector( 200, 200 ) * 0.4 / 2 ):GetNormalized()
+		local vel = self:Get2DVelocity()
+		if ( vel:LengthSqr() > 0 ) then
+			self.Direction = vel:GetNormalized()
+		end
+	local dir = self.Direction or dir
+	self:Set2DRotation( -math.atan2( dir.x, dir.y ) * 180 / math.pi )
+
 	-- Drag/Dampen?
 	self:Set2DVelocity( ApproachVector( FrameTime() * self.Decceleration, self:Get2DVelocity(), Vector( 0, 0, 0 ) ) )
-	
+
 	-- Input
 	local moving = false
 		if ( ply:KeyDown( IN_FORWARD ) ) then
-			-- self:AddMove( self:Forward() * self.Speed )
 			self:AddMove( self:Forward() * ( self.Speed + FrameTime() * self.Decceleration ) )
 			moving = true
 		end
 		if ( ply:KeyDown( IN_BACK ) ) then
-			-- self:AddMove( -self:Forward() * self.Speed )
 			self:AddMove( -self:Forward() * ( self.Speed + FrameTime() * self.Decceleration ) )
 			moving = true
 		end
 		if ( ply:KeyDown( IN_MOVERIGHT ) ) then
-			-- self:AddMove( self:Right() * self.Speed )
-			self:Set2DRotation( self:Get2DRotation() + 1 )
+			self:AddMove( self:Right() * ( self.Speed + FrameTime() * self.Decceleration ) )
+			-- self:Set2DRotation( self:Get2DRotation() + 1 )
 			moving = true
 		end
 		if ( ply:KeyDown( IN_MOVELEFT ) ) then
-			-- self:AddMove( -self:Right() * self.Speed )
-			self:Set2DRotation( self:Get2DRotation() - 1 )
+			self:AddMove( -self:Right() * ( self.Speed + FrameTime() * self.Decceleration ) )
+			-- self:Set2DRotation( self:Get2DRotation() - 1 )
 			moving = true
 		end
 
@@ -89,6 +104,7 @@ function ENT:AddMove( add )
 end
 
 function ENT:Think()
+	-- self:Set2DPos( Vector( 0, 0 ) )
 	if ( self:GetIndex() != -1 and !self.LateInitialized ) then
 		Ship.Ship[self:GetIndex()] = self
 		if( SERVER ) then
@@ -99,7 +115,7 @@ function ENT:Think()
 	end
 
 	-- Calculate the max bounds of the ship to get center
-	if ( !self.Size ) then
+	if ( !self.Size and self.Constructor ) then
 		local min = Vector( 100, 100 )
 		local max = Vector( 0, 0 )
 			for k, part in pairs( self.Constructor ) do
@@ -124,10 +140,58 @@ function ENT:Think()
 	if ( SERVER ) then
 		self:Set2DPos( self:Get2DPos() + self:Get2DVelocity() * FrameTime() )
 
-		if ( Ship:CheckCollision( self ) ) then
-			print( tostring( self ) .. " " )
+		local collisions = Ship:CheckCollision( self )
+		for collide, bool in pairs( collisions ) do
+			if ( self.CurrentCollisions[collide] ) then
+				self:OnCollisionStay( collide )
+			else
+				self:OnCollisionStart( collide )
+
+				self.CurrentCollisions[collide] = self:Get2DPos() - Ship.Ship[collide]:Get2DPos()
+			end
+		end
+		local remove = {}
+		for old, bool in pairs( self.CurrentCollisions ) do
+			if ( !collisions[old] ) then
+				self:OnCollisionFinish( old )
+
+				remove[old] = true
+			end
+		end
+		for rmv, bool in pairs( remove ) do
+			self.CurrentCollisions[rmv] = nil
 		end
 	end
+end
+
+function ENT:OnCollisionStart( other )
+	-- Temp measure to only board in one direction
+	if ( self:GetIndex() < other ) then
+		-- Board!!
+		
+	end
+
+	-- Shake
+	for k, v in pairs( player.GetAll() ) do
+		if ( v:GetNWInt( "CurrentShip" ) == self:GetIndex() ) then
+			util.ScreenShake( Vector( 0, 0, 0 ), 5, 5, 1, 5000 )
+		end
+	end
+
+	-- Sound
+	self:EmitSound( "physics/metal/metal_large_debris" .. math.random( 1, 2 ) .. ".wav" )
+	
+	self:Set2DVelocity( -self:Get2DVelocity() )
+end
+
+function ENT:OnCollisionStay( other )
+	-- Push back from other ship
+	local othership = Ship.Ship[other]
+	self:AddMove( self.CurrentCollisions[other] * 50 )
+end
+
+function ENT:OnCollisionFinish( other )
+	self:Set2DVelocity( Vector( 0, 0 ) )
 end
 
 if ( CLIENT ) then
@@ -142,10 +206,12 @@ if ( CLIENT ) then
 			-- local center = Vector( 
 
 			local mat = Matrix()
-				
 				-- Translate back onto vgui
 				mat:Rotate( Angle( 0, 0, 90 ) )
-				mat:Translate( Vector( 44, 180 + cellsize * 15, -48 ) )
+				-- print( self.Pos.x )
+				-- mat:Translate( Vector( self.Pos.x / 3.5, self.Pos.z + 60, -self.Pos.y ) )
+				mat:Translate( Vector( 40, self.Pos.z + 60, -self.Pos.y ) )
+				-- Translate this ship
 				mat:Translate( Vector( x, -y ) )
 				mat:Rotate( Angle( 0, -self:Get2DRotation(), 0 ) )
 				mat:Translate( Vector(
@@ -193,14 +259,31 @@ if ( CLIENT ) then
 			cam.PopModelMatrix()
 		end
 
-		-- draw.SimpleText( self:Get2DPos(), "DermaDefault", x, y + 32, Color( 255, 255, 255, 10 ) )
+		-- local x = gui.MouseX()
+		-- local y = gui.MouseY()
+		-- surface.DrawRect(
+			-- x,
+			-- y,
+			-- 32, 32
+		-- )
+		-- local dir = ( Vector( 100, 100 ) - Vector( x, y ) ):GetNormalized()
+		-- self:Set2DRotation( -math.atan2( dir.x, dir.y ) * 180 / math.pi )
+		-- surface.DrawLine( x, y, x + dir.x * 32, y + dir.y * 32 )
+		-- print( dir )
+		-- draw.SimpleText( dir, "DermaDefault", x, y + 32 * self:GetIndex(), Color( 255, 255, 255, 10 ) )
 		-- draw.SimpleText( self:Get2DVelocity(), "DermaDefault", x, y + 44, Color( 255, 255, 255, 10 ) )
 	end
 end
 
+function ENT:GetMapPos()
+	return Vector( 100, 48, SHIPEDITOR_ORIGIN( self:GetIndex() ).z + 40 )
+end
+
 function ENT:Forward()
-	return Angle( 0, self:Get2DRotation(), 0 ):Right()
+	-- return Angle( 0, self:Get2DRotation(), 0 ):Right()
+	return Vector( 0, -1, 0 )
 end
 function ENT:Right()
-	return Angle( 0, self:Get2DRotation(), 0 ):Forward()
+	-- return Angle( 0, self:Get2DRotation(), 0 ):Forward()
+	return Vector( 1, 0, 0 )
 end
