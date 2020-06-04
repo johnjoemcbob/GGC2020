@@ -11,6 +11,7 @@ AddCSLuaFile( "shared.lua" )
 AddCSLuaFile( "includes/modules/3d2dvgui.lua" )
 
 AddCSLuaFile( "cl_init.lua" )
+AddCSLuaFile( "cl_billboard.lua" )
 AddCSLuaFile( "cl_modelcache.lua" )
 AddCSLuaFile( "cl_shipeditor.lua" )
 

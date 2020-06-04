@@ -91,12 +91,46 @@ if ( SERVER ) then
 				ply.OwnShip = index
 			end
 
+			-- Test doors
+			local doors = {
+				{ Vector( 1, 0, 0 ),	Angle( 0, 0, 0 ) },
+				{ Vector( -1, 0, 0 ),	Angle( 0, 0, 0 ) },
+				{ Vector( 0, 1, 0 ),	Angle( 0, 90, 0 ) },
+				{ Vector( 0, -1, 0 ),	Angle( 0, 90, 0 ) },
+			}
+			for k, doordata in pairs( doors ) do
+				local pos = ent:GetPos() + doordata[1] * SHIPPART_SIZE / 2
+				local tr = util.TraceLine( {
+					start = ent:GetPos(),
+					endpos = ent:GetPos() + doordata[1] * SHIPPART_SIZE / 2 * 1.1,
+				} )
+				if ( !tr.Hit ) then
+					if ( math.random( 1, 2 ) == 1 ) then
+						local door = ents.Create( "ggcj_door" )
+							door:SetPos( pos + doordata[2]:Forward() * 0.1 )
+							door:SetAngles( doordata[2] )
+						door:Spawn()
+						door:SetColor( COLOUR_UNLIT )
+					end
+				end
+			end
+
 			if ( first ) then
 				-- ent:SetParent( first )
 			else
 				first = ent
 			end
 		end
+
+		-- Spawn pilot chair
+		local ent = GAMEMODE.CreateEnt(
+			"prop_vehicle_prisoner_pod",
+			"models/nova/chair_office02.mdl",
+			SHIPEDITOR_ORIGIN( index ) + Vector( 630, -500, -64 ),
+			Angle( 0, 0, 0 ),
+			false
+		)
+		ent:SetKeyValue( "vehiclescript", "scripts/vehicles/prisoner_pod.txt" )
 	end
 
 	Ship.Clear = function( self, ply )

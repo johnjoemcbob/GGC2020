@@ -166,7 +166,7 @@ end
 
 function ENT:OnCollisionStart( other )
 	-- Temp measure to only board in one direction
-	if ( self:GetIndex() < other ) then
+	if ( self:GetIndex() > other ) then
 		-- Board!!
 		print( "BOARD " .. other )
 		for k, ply in pairs( player.GetAll() ) do
@@ -210,7 +210,7 @@ if ( CLIENT ) then
 
 		local cellsize = SHIPPART_SIZE_2D
 		-- surface.SetDrawColor( COLOUR_WHITE )
-		if ( self.Constructor ) then
+		if ( self.Constructor and self.Pos ) then
 			-- print( self.Size )
 			-- local center = Vector( 
 

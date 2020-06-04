@@ -14,7 +14,7 @@ local DRAGDROP_SHIP = "DRAGDROP_SHIP"
   -- Gamemode Hooks --
 -------------------------
 hook.Add( "Think", HOOK_PREFIX .. "_ShipEditor_Think", function()
-	if ( LocalPlayer():KeyPressed( IN_ZOOM ) ) then
+	if ( LocalPlayer():KeyDown( IN_ZOOM ) ) then
 		ShipEditor:CreateVGUI()
 	end
 end )

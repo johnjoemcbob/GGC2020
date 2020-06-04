@@ -9,10 +9,11 @@ include( "includes/modules/3d2dvgui.lua" )
 
 include( "shared.lua" )
 
+include( "cl_billboard.lua" )
 include( "cl_modelcache.lua" )
 include( "cl_shipeditor.lua" )
 
-local MAT_PLAYER = Material( "playersheet.png", "nocull 1 smooth 0" )
+MAT_PLAYER = Material( "playersheet.png", "nocull 1 smooth 0" )
 	-- MAT_PLAYER:SetInt( "$flags", bit.bor( MAT_PLAYER:GetInt( "$flags" ), 2 ^ 8 ) )
 
 	local MAT_PLAYER_WIDTH = 643
@@ -20,14 +21,16 @@ local MAT_PLAYER = Material( "playersheet.png", "nocull 1 smooth 0" )
 	-- MAT_PLAYER:SetInt( "$flags", 2 ^ 3 )
 	-- MAT_PLAYER:SetInt( "$flags", bit.bor( MAT_PLAYER:GetInt( "$flags" ), 2 ^ 8 ) )
 
-local MAT_GUNS_FUTURE = Material( "guns_future.png", "nocull 1 smooth 0" )
+MAT_GUNS_FUTURE = Material( "guns_future.png", "nocull 1 smooth 0" )
 	-- MAT_GUNS_FUTURE:SetInt( "$flags", bit.bor( MAT_GUNS_FUTURE:GetInt( "$flags" ), 2 ^ 8 ) )
 
 	local MAT_GUNS_FUTURE_WIDTH = 1024
 	local MAT_GUNS_FUTURE_HEIGHT = 1024
 	local GUNSCALE = 0.3
 
-local MAT_MUZZLEFLASH = Material( "muzzleflash.png", "nocull 1 smooth 0" )
+MAT_MUZZLEFLASH = Material( "muzzleflash.png", "nocull 1 smooth 0" )
+
+MAT_TEST = Material( "test.png", "nocull 1 smooth 0" )
 
 local PLAYER_WIDTH = 40
 local PLAYER_HEIGHT = 74
@@ -85,28 +88,19 @@ function GM:Think()
 end
 
 function GM:PreRender()
-	render.SetLightingMode( 0 ) -- 1 )
+	render.SetLightingMode( 0 )
 
-	local dlight = DynamicLight( LocalPlayer():EntIndex() )
-	if ( dlight ) then
-		dlight.pos = LocalPlayer():GetPos() + Vector( 0, 0, 32 )
-		dlight.r = 255
-		dlight.g = 10
-		dlight.b = 110
-		dlight.brightness = 2
-		dlight.Decay = 1000
-		dlight.Size = 256 * 3
-		dlight.DieTime = CurTime() + 1
-	end
-	-- render.SuppressEngineLighting( true )
-	-- render.SetLocalModelLights( {
-		-- type = MATERIAL_LIGHT_POINT,
-		-- pos = LocalPlayer():GetPos(),
-		-- color = Vector( 255, 255, 255 ),
-		-- range = 0,
-	-- } )
-	-- render.ResetModelLighting( 1, 0, 0 )
-	-- render.SetAmbientLight( 1, 0, 1 )
+	-- local dlight = DynamicLight( LocalPlayer():EntIndex() )
+	-- if ( dlight ) then
+		-- dlight.pos = LocalPlayer():GetPos() + Vector( 0, 0, 32 )
+		-- dlight.r = 255
+		-- dlight.g = 10
+		-- dlight.b = 110
+		-- dlight.brightness = 2
+		-- dlight.Decay = 1000
+		-- dlight.Size = 256 * 3
+		-- dlight.DieTime = CurTime() + 1
+	-- end
 end
 
 function GM:PreDrawOpaqueRenderables()
@@ -121,41 +115,47 @@ function GM:PrePlayerDraw( ply )
 		ang.r = 0
 		ang:RotateAroundAxis( ang:Right(), 90 )
 		ang:RotateAroundAxis( ang:Up(), -90 )
-	cam.Start3D2D( pos, ang, 1 )
-		local frame = 1
-		local anim = "idle"
-			if ( !ply:IsOnGround() ) then
-				anim = "jump"
 
-				local frames = #ANIMS[MAT_PLAYER][anim]
-				local tr = util.TraceLine( {
-					start = ply:GetPos(),
-					endpos = ply:GetPos() - Vector( 0, 0, 10000 ),
-					filter = ply
-				} )
-				local dist = math.floor( math.Clamp( ply:GetPos():Distance( tr.HitPos ) / 10, 0, frames - 1 ) )
-				frame = dist + 1
+	-- Draw player
+	local frame = 1
+	local anim = "idle"
+		if ( !ply:IsOnGround() ) then
+			anim = "jump"
 
-				-- Animate wobble a little at height of jump
-				if ( frame == frames ) then
-					frame = math.floor( CurTime() * ANIMS[MAT_PLAYER][anim].Speed % 2 ) + frames - 1
-				end
-			elseif ( ply:GetVelocity():LengthSqr() > 10 ) then
+			local frames = #ANIMS[MAT_PLAYER][anim]
+			local tr = util.TraceLine( {
+				start = ply:GetPos(),
+				endpos = ply:GetPos() - Vector( 0, 0, 10000 ),
+				filter = ply
+			} )
+			local dist = math.floor( math.Clamp( ply:GetPos():Distance( tr.HitPos ) / 10, 0, frames - 1 ) )
+			frame = dist + 1
+
+			-- Animate wobble a little at height of jump
+			if ( frame == frames ) then
+				frame = math.floor( CurTime() * ANIMS[MAT_PLAYER][anim].Speed % 2 ) + frames - 1
+			end
+
+			-- Detect for npcs
+			if ( dist == 0 ) then
+				anim = "idle"
+			end
+		end
+		if ( anim != "jump" ) then
+			if ( ply:GetVelocity():LengthSqr() > 10 ) then
 				anim = "run"
 			end
-			if ( anim != "jump" ) then
-				frame = math.floor( CurTime() * ( ANIMS[MAT_PLAYER][anim].Speed ) % #ANIMS[MAT_PLAYER][anim] + 1 )
-			end
-			-- local anim = "jump"
-		local left = ply.BillboardLeft
-			local dir = ply:GetVelocity():GetNormalized()
-			local angBetween = dir:Dot( LocalPlayer():GetAngles():Right() )
-			if ( angBetween != 0 ) then
-				left = angBetween < 0
-			end
-			ply.BillboardLeft = left
-		DrawPlayerWithUVs( -PLAYER_WIDTH / 2, -PLAYER_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT, MAT_PLAYER, anim, frame, left )
-	cam.End3D2D()
+
+			frame = math.floor( CurTime() * ( ANIMS[MAT_PLAYER][anim].Speed ) % #ANIMS[MAT_PLAYER][anim] + 1 )
+		end
+	local left = ply.BillboardLeft
+		local dir = ply:GetVelocity():GetNormalized()
+		local angBetween = dir:Dot( LocalPlayer():GetAngles():Right() )
+		if ( angBetween != 0 ) then
+			left = angBetween < 0
+		end
+		ply.BillboardLeft = left
+	DrawPlayerWithUVs( ply, -PLAYER_WIDTH / 2, -PLAYER_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT, MAT_PLAYER, anim, frame, left )
 
 	-- Draw weapon
 	-- TODO DOESN'T WORK, WEAPONS NEED TO REFACTOR TO DRAW THEMSELVES
@@ -173,28 +173,30 @@ function GM:PrePlayerDraw( ply )
 		else
 			ply.ReloadingProgress = 0
 		end
-	cam.Start3D2D( pos, ang, 1 )
+	-- cam.Start3D2D( pos, ang, 1 )
 		local x = -PLAYER_WIDTH / 2
 		local y = -PLAYER_HEIGHT / 5 * 3 + 1 * frame
 		DrawWeapon( ply, x, y, 1, left )
-	cam.End3D2D()
+	-- cam.End3D2D()
 
 	return true
 end
 
 function GM:PostDrawOpaqueRenderables()
-	-- for k, npc in pairs( ents.FindByClass( "npc_combine_s" ) ) do
-		-- GAMEMODE:PrePlayerDraw( npc )
-	-- end
+	for k, npc in pairs( ents.FindByClass( "npc_combine_s" ) ) do
+		npc.RenderOverride = function( self )
+			local wep = self:GetActiveWeapon()
+			if ( wep and wep:IsValid() ) then
+				wep:SetNoDraw( true )
+			end
+
+			GAMEMODE:PrePlayerDraw( self )
+		end
+	end
 end
 
 function GM:HUDPaint()
 	render.SetLightingMode( 0 )
-
-	-- For each ship
-		-- TODO function to get ship bounds
-		-- Test against every other ship
-			-- If collision then change colour
 
 	-- Testing collision + rotation code!
 	-- local x = ScrW() / 4 * 3
@@ -256,7 +258,7 @@ function GM:PreDrawViewModel( viewmodel, ply, weapon )
 	ply.ViewModelAngles = LerpAngle( ft * VIEWMODEL_LERP_ANGLE, UnNaNAngle( ply.ViewModelAngles ), ang )
 
 	cam.Start3D2D( ply.ViewModelPos, ply.ViewModelAngles, 1 )
-		DrawWeapon( ply, -60, 0, scale, true )
+		DrawWeapon( ply, -60, 0, scale, true, true )
 	cam.End3D2D()
 
 	return true
@@ -279,7 +281,7 @@ end
 -------------------------
 
 -- UV anims
-function DrawWeapon( ply, x, y, scale, left )
+function DrawWeapon( ply, x, y, scale, left, viewmodel )
 	local gun = Get2DGun()
 	local start = gun[1]
 	local w = gun[2].x
@@ -307,7 +309,11 @@ function DrawWeapon( ply, x, y, scale, left )
 	-- Draw gun
 	surface.SetDrawColor( COLOUR_WHITE )
 	surface.SetMaterial( MAT_GUNS_FUTURE )
-	DrawWithUVs( x, y, w * scale * GUNSCALE, h * GUNSCALE, start.x / MAT_GUNS_FUTURE_WIDTH, start.y / MAT_GUNS_FUTURE_HEIGHT, ( start.x + w ) / MAT_GUNS_FUTURE_WIDTH, ( start.y + h ) / MAT_GUNS_FUTURE_HEIGHT, left )
+	if ( viewmodel ) then
+		DrawWithUVs( x, y, w * scale * GUNSCALE, h * GUNSCALE, start.x / MAT_GUNS_FUTURE_WIDTH, start.y / MAT_GUNS_FUTURE_HEIGHT, ( start.x + w ) / MAT_GUNS_FUTURE_WIDTH, ( start.y + h ) / MAT_GUNS_FUTURE_HEIGHT, left )
+	else
+		GAMEMODE:DrawBillboardedUVs( ply:GetPos(), Vector( w * scale * GUNSCALE, h * GUNSCALE ), MAT_GUNS_FUTURE, start.x / MAT_GUNS_FUTURE_WIDTH, start.y / MAT_GUNS_FUTURE_HEIGHT, ( start.x + w ) / MAT_GUNS_FUTURE_WIDTH, ( start.y + h ) / MAT_GUNS_FUTURE_HEIGHT, left )
+	end
 
 	-- Draw muzzle flash
 	if ( firing ) then
@@ -330,7 +336,7 @@ function DrawWeapon( ply, x, y, scale, left )
 		-- ply.ViewModelPos = ply.ViewModelPos - ply:GetForward() * 5
 	end
 end
-function DrawPlayerWithUVs( x, y, w, h, mat, anim, frame, left )
+function DrawPlayerWithUVs( ply, x, y, w, h, mat, anim, frame, left )
 	-- 17 / 643, 94 / 831, ( 17 + 68 ) / 643, ( 94 + 68 ) / 831
 	local uvs = ANIMS[mat][anim][frame]
 	local u1 = uvs.x / MAT_PLAYER_WIDTH
@@ -338,9 +344,12 @@ function DrawPlayerWithUVs( x, y, w, h, mat, anim, frame, left )
 	local u2 = ( uvs.x + PLAYER_UV_WIDTH ) / MAT_PLAYER_WIDTH
 	local v2 = ( uvs.y + PLAYER_UV_HEIGHT ) / MAT_PLAYER_HEIGHT
 
-	surface.SetDrawColor( COLOUR_WHITE )
-	surface.SetMaterial( mat )
-	DrawWithUVs( x, y, w, h, u1, v1, u2, v2, left )
+	if ( !left ) then
+		local temp = u1
+		u1 = u2
+		u2 = temp
+	end
+	GAMEMODE:DrawBillboardedEntUVs( ply, mat, u1, v1, u2, v2 )
 end
 function DrawWithUVs( x, y, w, h, u1, v1, u2, v2, left )
 	if ( left ) then

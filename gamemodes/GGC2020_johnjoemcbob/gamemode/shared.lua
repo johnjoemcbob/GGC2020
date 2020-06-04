@@ -21,17 +21,7 @@ end
 -- Globals
 GM.Epsilon				= 0.001
 GM.GamemodePath			= "gamemodes/GGC2020_johnjoemcbob/"
-GM.ShipPartModels		= {
-	["1x1"] = {
-		Straight = "models/cerus/modbridge/core/s-111.mdl",
-		StraightGlass = "models/cerus/modbridge/core/s-111g.mdl",
-		End = "models/cerus/modbridge/core/sc-111.mdl",
-		EndGlass = "models/cerus/modbridge/core/sc-111g.mdl",
-		T = "models/cerus/modbridge/core/t-111.mdl",
-		Cross = "models/cerus/modbridge/core/x-111.mdl",
-		Corner = "models/cerus/modbridge/core/c-111.mdl",
-	},
-}
+
 -- Convert from 1 to 3 = models/cerus/modbridge/core/spartan/cv-11-31.mdl
 HOOK_PREFIX = "GGC2020_johnjoemcbob_"
 COLOUR_BLACK		= Color( 0, 0, 0, 255 )
@@ -42,11 +32,12 @@ COLOUR_GLASS		= Color( 50, 100, 255, 255 )
 SHIPPART_SIZE		= 128 + 22
 SHIPPART_SIZE_2D	= 2
 SHIPEDITOR_ORIGIN	= function( index )
-	return Vector( -489, 426, -21 + ( SHIPPART_SIZE + 4 ) * ( index - 1 ) )
+	return Vector( -489, 426, -21 + ( SHIPPART_SIZE + 4 ) * 2 * ( index - 1 ) )
 end
 NET_SHIPEDITOR_SPAWN = "Net_ShipEditor_Spawn"
 
 local CORRWIDTH = 8
+SHIPENDCAP = "models/cerus/modbridge/plate/flat/s11.mdl"
 SHIPPARTS = {
 	["x-111"] = {
 		"models/cerus/modbridge/core/x-111.mdl",
