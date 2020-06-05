@@ -33,6 +33,12 @@ function ENT:Initialize()
 
 	if ( SERVER ) then
 		self:SetUseType( ONOFF_USE )
+		
+		local ent = GAMEMODE.CreateProp( "models/cerus/modbridge/misc/doors/door11a.mdl", self:GetPos(), self:GetAngles(), false )
+		ent:SetModelScale( 0.999 ) -- TODO try to avoid z fighting
+		ent:SetColor( self:GetColor() )
+		-- ent:SetParent( self )
+		self.OuterFrame = ent
 	end
 end
 
@@ -75,14 +81,14 @@ if ( CLIENT ) then
 	function ENT:Draw()
 		self:DrawModel()
 
-		GAMEMODE.RenderCachedModel(
-			"models/cerus/modbridge/misc/doors/door11a.mdl",
-			self:GetPos(),
-			self:GetAngles(),
-			Vector( 1, 1, 1 ),
-			nil,
-			self:GetColor()
-		)
+		-- GAMEMODE.RenderCachedModel(
+			-- "models/cerus/modbridge/misc/doors/door11a.mdl",
+			-- self:GetPos(),
+			-- self:GetAngles(),
+			-- Vector( 1, 1, 1 ),
+			-- nil,
+			-- self:GetColor()
+		-- )
 
 		-- render.DrawBox( self:GetPos() + self:OBBCenter() - Vector( 0, 0, size ), self:GetAngles(), self:OBBMins(), self:OBBMaxs(), Color( 255, 0, 0, 120 ) )
 	end

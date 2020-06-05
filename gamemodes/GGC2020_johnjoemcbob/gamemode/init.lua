@@ -58,8 +58,8 @@ hook.Add( "PlayerSpawn", HOOK_PREFIX .. "PlayerSpawn", function( ply )
 		ply:SetBloodColor( BLOOD_COLOR_ANTLION_WORKER )
 
 		ply:StripWeapons()
-		ply:Give( "weapon_ar2" )
-		ply:GiveAmmo( 2000, "AR2" )
+		ply:Give( "ggcj_weapon_base" )
+		ply:GiveAmmo( 2000, "Pistol" )
 
 		local ship = ply:GetNWInt( "CurrentShip", -1 )
 		if ( ship >= 0 ) then

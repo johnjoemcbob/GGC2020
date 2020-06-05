@@ -228,9 +228,9 @@ function GM:PreDrawViewModel( viewmodel, ply, weapon )
 	if ( !ply ) then return end
 
 	local ft = FrameTime()
-	-- print( ft )
 	ft = 0.016
 
+	-- Transform
 	local scale = 2
 	local ang = LocalPlayer():EyeAngles()
 	local pos = LocalPlayer():EyePos() +
@@ -240,13 +240,15 @@ function GM:PreDrawViewModel( viewmodel, ply, weapon )
 		ang:RotateAroundAxis( ang:Right(), 3 )
 		ang:RotateAroundAxis( ang:Up(), 180 + 5 )
 		ang:RotateAroundAxis( ang:Forward(), 90 )
+	-- Reloading
 	local reloading = false
-		if ( ply:GetActiveWeapon() and ply:GetActiveWeapon():IsValid() ) then
-			reloading = ( ply:GetActiveWeapon():GetActivity() == ACT_RELOAD ) or ( ply:GetActiveWeapon():GetActivity() == ACT_VM_RELOAD )
+	local reloadtime = 1.3
+		if ( ply.Reloading ) then
+			reloading = ( ply.Reloading + reloadtime ) > CurTime()
 		end
 		if ( reloading ) then
-			ply.ReloadingProgress = ply.ReloadingProgress + ft * 230
-			-- print( ply.ReloadingProgress )
+			ply.ReloadingProgress = -( ( ( ply.Reloading + reloadtime ) - CurTime() ) / reloadtime ) * 360
+
 			if ( ply.ReloadingProgress < 360 ) then
 				pos = pos + ang:Forward() * -30
 				ang:RotateAroundAxis( ang:Up(), ply.ReloadingProgress )
@@ -257,6 +259,7 @@ function GM:PreDrawViewModel( viewmodel, ply, weapon )
 	ply.ViewModelPos = LerpVector( ft * VIEWMODEL_LERP_VECTOR, UnNaNVector( ply.ViewModelPos, pos ), pos )
 	ply.ViewModelAngles = LerpAngle( ft * VIEWMODEL_LERP_ANGLE, UnNaNAngle( ply.ViewModelAngles ), ang )
 
+	-- Draw
 	cam.Start3D2D( ply.ViewModelPos, ply.ViewModelAngles, 1 )
 		DrawWeapon( ply, -60, 0, scale, true, true )
 	cam.End3D2D()

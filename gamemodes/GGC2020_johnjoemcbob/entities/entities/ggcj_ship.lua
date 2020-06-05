@@ -168,7 +168,6 @@ function ENT:OnCollisionStart( other )
 	-- Temp measure to only board in one direction
 	if ( self:GetIndex() > other ) then
 		-- Board!!
-		print( "BOARD " .. other )
 		for k, ply in pairs( player.GetAll() ) do
 			if ( ply:GetNWInt( "CurrentShip" ) == self:GetIndex() ) then
 				if ( ply:InVehicle() ) then
@@ -177,6 +176,20 @@ function ENT:OnCollisionStart( other )
 				ply:SetPos( Ship.Ship[other].SpawnPoint )
 				PrintMessage( HUD_PRINTCENTER, "BOARDING" )
 			end
+		end
+
+		-- Spawn enemies
+		for _, pos in pairs( Ship.Ship[other].EnemySpawners ) do
+			local npc = GAMEMODE.CreateEnt( "npc_combine_s", nil, pos, Angle( 0, 0, 0 ) )
+				npc:Give( "weapon_ar2" )
+				-- npc:Give( "ggcj_weapon_base" )
+				npc:SetHealth( 20 )
+			table.insert( Ship.Ship[other].Parts, npc )
+		end
+
+		-- Temp: Close doors
+		for k, ent in pairs( ents.FindByClass( "ggcj_door" ) ) do
+			ent:Toggle( false )
 		end
 	end
 

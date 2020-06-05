@@ -54,6 +54,7 @@ if ( SERVER ) then
 			self.Ship[index]:SetPos( SHIPEDITOR_ORIGIN( index ) )
 			self.Ship[index]:SetIndex( index )
 		self.Ship[index]:Spawn()
+		self.Ship[index].EnemySpawners = {}
 
 		local first = nil
 		self.Ship[index].Constructor = table.shallowcopy( tab )
@@ -78,11 +79,7 @@ if ( SERVER ) then
 
 			-- Temp testing
 			if ( math.random( 1, 2 ) == 1 ) then
-				local npc = GAMEMODE.CreateEnt( "npc_combine_s", nil, ent:GetPos(), Angle( 0, 0, 0 ) )
-					npc:Give( "weapon_ar2" )
-					npc:SetHealth( 20 )
-					-- npc:SetNoDraw( true )
-				table.insert( self.Ship[index].Parts, npc )
+				table.insert( self.Ship[index].EnemySpawners, ent:GetPos() )
 			else
 				self.Ship[index].SpawnPoint = ent:GetPos() - Vector( 0, 0, 32 )
 				ply:SetPos( self.Ship[index].SpawnPoint )
@@ -92,25 +89,29 @@ if ( SERVER ) then
 			end
 
 			-- Test doors
-			local doors = {
-				{ Vector( 1, 0, 0 ),	Angle( 0, 0, 0 ) },
-				{ Vector( -1, 0, 0 ),	Angle( 0, 0, 0 ) },
-				{ Vector( 0, 1, 0 ),	Angle( 0, 90, 0 ) },
-				{ Vector( 0, -1, 0 ),	Angle( 0, 90, 0 ) },
-			}
-			for k, doordata in pairs( doors ) do
-				local pos = ent:GetPos() + doordata[1] * SHIPPART_SIZE / 2
-				local tr = util.TraceLine( {
-					start = ent:GetPos(),
-					endpos = ent:GetPos() + doordata[1] * SHIPPART_SIZE / 2 * 1.1,
-				} )
-				if ( !tr.Hit ) then
-					if ( math.random( 1, 2 ) == 1 ) then
-						local door = ents.Create( "ggcj_door" )
-							door:SetPos( pos + doordata[2]:Forward() * 0.1 )
-							door:SetAngles( doordata[2] )
-						door:Spawn()
-						door:SetColor( COLOUR_UNLIT )
+			if ( v.Collisions.x == 1 and v.Collisions.y == 1 ) then
+				local doors = {
+					{ Vector( 1, 0, 0 ),	Angle( 0, 0, 0 ) },
+					{ Vector( -1, 0, 0 ),	Angle( 0, 0, 0 ) },
+					{ Vector( 0, 1, 0 ),	Angle( 0, 90, 0 ) },
+					{ Vector( 0, -1, 0 ),	Angle( 0, 90, 0 ) },
+				}
+				for k, doordata in pairs( doors ) do
+					local pos = ent:GetPos() + doordata[1] * SHIPPART_SIZE / 2
+					local tr = util.TraceLine( {
+						start = ent:GetPos(),
+						endpos = ent:GetPos() + doordata[1] * SHIPPART_SIZE / 2 * 1.5,
+					} )
+					if ( !tr.Hit ) then
+						if ( math.random( 1, 5 ) == 1 ) then
+							local door = ents.Create( "ggcj_door" )
+								door:SetPos( pos + doordata[2]:Forward() * 0.1 )
+								door:SetAngles( doordata[2] )
+								door:SetColor( COLOUR_UNLIT )
+								door:Spawn()
+								table.insert( self.Ship[index].Parts, door.OuterFrame )
+							table.insert( self.Ship[index].Parts, door )
+						end
 					end
 				end
 			end
