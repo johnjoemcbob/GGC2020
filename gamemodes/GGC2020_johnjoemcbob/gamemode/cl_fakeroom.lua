@@ -1,0 +1,14 @@
+--
+-- GGC2020_johnjoemcbob
+-- 09/06/20
+--
+-- Clientside Fake Room
+--
+
+-- TODO
+-- Render fake room
+-- Camera as fixed point as in freelancer/resident evil
+-- Draw player
+-- Allow clicking to move around on plane
+-- Collisions/ valid path points
+-- Interaction zones for talking/etc

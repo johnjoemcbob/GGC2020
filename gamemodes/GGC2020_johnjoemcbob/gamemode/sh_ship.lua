@@ -41,8 +41,8 @@ if ( CLIENT ) then
 
 		-- Store for render
 		Ship.Ship[index].Constructor = tab
-		print( "Receive ship! " .. index )
-		PrintTable( Ship.Ship[index].Constructor )
+		-- print( "Receive ship! " .. index )
+		-- PrintTable( Ship.Ship[index].Constructor )
 	end )
 end
 
@@ -66,18 +66,14 @@ if ( SERVER ) then
 				end
 			local ent = GAMEMODE.CreateProp(
 				part[1],
-				SHIPEDITOR_ORIGIN( index ) +
-					Vector(
-						v.Grid.x + math.floor( v.Collisions.x / 2 ) + part[3].x,
-						-v.Grid.y - math.floor( v.Collisions.y / 2 ) + part[3].y
-					) * SHIPPART_SIZE,
+				SHIPEDITOR_ORIGIN( index ) + Ship.GetPartOffset( v ),
 				Angle( 0, 90 * v.Rotation, 0 ),
 				false
 			)
 			ent:SetColor( COLOUR_UNLIT )
 			table.insert( self.Ship[index].Parts, ent )
 
-			-- Temp testing
+			-- Temp testing - Enemy spawners/player spawn point
 			if ( math.random( 1, 2 ) == 1 ) then
 				table.insert( self.Ship[index].EnemySpawners, ent:GetPos() )
 			else
@@ -169,9 +165,22 @@ if ( SERVER ) then
 	-- Command to join other ships for now
 	concommand.Add( "ggcj_setship", function( ply, cmd, args )
 		ply:SetNWInt( "CurrentShip", tonumber( args[1] ) )
-		-- print( args[1] )
+	end )
+
+	concommand.Add( "ggcj_loadships", function( ply, cmd, args )
+		local ships = {
+			"shipbig.txt",
+			"shipsmall.txt",
+			"shiptiny.txt",
+		}
+		for k, ship in pairs( ships ) do
+			local json = file.Read( HOOK_PREFIX .. "/" .. ship )
+			local tab = util.JSONToTable( json )
+			Ship:Generate( ply, tab )
+		end
 	end )
 end
+
 if ( CLIENT ) then
 	local sampleFrame = vgui.Create( "DFrame" )
 	sampleFrame:SetTitle( "" )
@@ -182,7 +191,8 @@ if ( CLIENT ) then
 	sampleFrame.Paint = function( self, w, h )
 		-- local w = ScrW() / 4
 		-- local h = w
-		local x = 0 -- ScrW() - w
+		local x = 0
+		local x = ScrW() - w
 		local y = 0
 
 		-- Background
@@ -217,19 +227,20 @@ if ( CLIENT ) then
 					end
 
 					-- Debug lines
+						local mult = 0.1
 						surface.SetDrawColor( COLOUR_WHITE )
-						surface.DrawLine( sx, sy, sx + ship:Get2DVelocity().x, sy + ship:Get2DVelocity().y )
+						surface.DrawLine( sx, sy, sx + ship:Get2DVelocity().x * mult, sy + ship:Get2DVelocity().y * mult )
 
-						surface.SetDrawColor( Color( 255, 0, 0, 255 ) )
-						surface.DrawLine( sx, sy, sx + ship:Forward().x * 100, sy + ship:Forward().y * 100 )
+						-- surface.SetDrawColor( Color( 255, 0, 0, 255 ) )
+						-- surface.DrawLine( sx, sy, sx + ship:Forward().x * 100, sy + ship:Forward().y * 100 )
 
 					-- Player ship
 					local col = COLOUR_GLASS
-						local collide = tablelength( Ship:CheckCollision( ship ) ) > 0
-						-- print( collide )
-						if ( collide ) then
-							col = Color( 255, 0, 100, 255 )
-						end
+						DEBUG_SHIP_COLLISION_POS = Vector( x + w / 2, y + h / 2 )
+						-- local collide = ( tablelength( Ship:CheckCollision( ship ) ) > 0 )
+						-- if ( collide ) then
+							-- col = Color( 255, 0, 100, 255 )
+						-- end
 					ship.Pos = self.Pos
 					ship:HUDPaint( sx, sy, sw, col )
 
@@ -242,7 +253,7 @@ if ( CLIENT ) then
 							other.Pos = self.Pos
 							other:HUDPaint( sx, sy, sw, COLOUR_WHITE )
 						
-							surface.SetDrawColor( Color( 255, 255, 0, 255 ) )
+							surface.SetDrawColor( Color( 255, 255, 0, 10 ) )
 							surface.DrawLine( ox, oy, sx, sy )
 						end
 					end
@@ -250,17 +261,17 @@ if ( CLIENT ) then
 			end
 		end
 		draw.StencilBasic( mask, inner )
+		-- inner()
 	end
 
-	hook.Add( "PostDrawTranslucentRenderables", "DrawDemoFrame", function()
+	hook.Add( "PostDrawTranslucentRenderables", HOOK_PREFIX .. "ShipMap_PostDrawTranslucentRenderables", function()
 		local ship = LocalPlayer():GetNWInt( "CurrentShip" )
-		-- print( ship )
+
 		if ( ship and ship >= 0 ) then
 			local ship = Ship.Ship[ship]
 			if ( ship and ship:IsValid() ) then
 				local pos = ship:GetMapPos()
-				-- local pos = LocalPlayer():EyePos() + LocalPlayer():EyeAngles():Forward() * 1
-				-- print( pos )
+
 				sampleFrame.Pos = pos
 				vgui.Start3D2D( pos, Angle( 0, 0, 90 ), 0.4 )
 					sampleFrame:Paint3D2D()
@@ -268,15 +279,21 @@ if ( CLIENT ) then
 			end
 		end
 	end )
+
+	hook.Add( "HUDPaint", HOOK_PREFIX .. "ShipMap_HUDPaint", function()
+		-- sampleFrame.Pos = Vector( 0, 0, 0 )
+		-- sampleFrame:Paint( ScrW() / 6, ScrW() / 6 )
+	end )
 end
 
 function Ship.CheckCollision( self, ship )
+	local border = 16
 	local collisions = {}
 		if ( ship.Size ) then
 			local sx = 0
 			local sy = 0
-			local sw = ( ship.Size.x - 0 ) * SHIPPART_SIZE_2D
-			local sh = ( ship.Size.y - 0 ) * SHIPPART_SIZE_2D
+			local sw = ( ship.Size.x ) * SHIPPART_SIZE_2D + border
+			local sh = ( ship.Size.y ) * SHIPPART_SIZE_2D + border
 			local a = { sx, sy, sw, sh, -ship:Get2DRotation() }
 
 			for k, other in pairs( Ship.Ship ) do
@@ -284,7 +301,8 @@ function Ship.CheckCollision( self, ship )
 					local b = {
 						sx + ( other:Get2DPos().x - ship:Get2DPos().x ),
 						sy + ( other:Get2DPos().y - ship:Get2DPos().y ),
-						( other.Size.x - 1 ) * SHIPPART_SIZE_2D, ( other.Size.y - 1 ) * SHIPPART_SIZE_2D,
+						( other.Size.x ) * SHIPPART_SIZE_2D + border,
+						( other.Size.y ) * SHIPPART_SIZE_2D + border,
 						-other:Get2DRotation()
 					}
 					if ( intersect_squares( a, b ) ) then
@@ -294,4 +312,25 @@ function Ship.CheckCollision( self, ship )
 			end
 		end
 	return collisions
+end
+
+Ship.GetShip = function( ply )
+	if ( CLIENT and !ply ) then ply = LocalPlayer() end
+	local index = ply:GetNWInt( "CurrentShip", -1 )
+		if ( index == -1 ) then
+			return nil
+		end
+	return Ship.Ship[index]
+end
+
+Ship.GetPartOffset = function( data )
+	local part = SHIPPARTS[data.Name]
+	-- return Vector(
+		-- data.Grid.x + math.floor( data.Collisions.x / 2 ) + part[3].x,
+		-- -data.Grid.y - math.floor( data.Collisions.y / 2 ) + part[3].y
+	-- ) * SHIPPART_SIZE
+	return Vector(
+		data.Grid.x + math.floor( part[2].x / 2 ) + part[3].x,
+		-data.Grid.y - math.floor( part[2].y / 2 ) + part[3].y
+	) * SHIPPART_SIZE
 end

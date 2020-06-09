@@ -14,6 +14,9 @@ AddCSLuaFile( "cl_init.lua" )
 AddCSLuaFile( "cl_billboard.lua" )
 AddCSLuaFile( "cl_modelcache.lua" )
 AddCSLuaFile( "cl_shipeditor.lua" )
+AddCSLuaFile( "cl_outsiderender.lua" )
+AddCSLuaFile( "cl_planet.lua" )
+AddCSLuaFile( "cl_fakeroom.lua" )
 
 -- LUA Includes
 include( "shared.lua" )

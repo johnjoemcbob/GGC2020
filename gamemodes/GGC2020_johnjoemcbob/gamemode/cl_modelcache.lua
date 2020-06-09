@@ -24,6 +24,10 @@ function GM.GetCachedModel( model, ren )
 end
 
 function GM.RenderCachedModel( model, pos, ang, sca, mat, col, ren, extra )
+	if ( !col ) then
+		col = Color( 255, 255, 255, 255 )
+	end
+
 	local ent = GAMEMODE.GetCachedModel( model, ren )
 	render.SetColorModulation( col.r / 255, col.g / 255, col.b / 255 )
 		ent:SetPos( pos )

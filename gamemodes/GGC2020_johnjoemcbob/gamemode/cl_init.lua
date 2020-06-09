@@ -12,6 +12,9 @@ include( "shared.lua" )
 include( "cl_billboard.lua" )
 include( "cl_modelcache.lua" )
 include( "cl_shipeditor.lua" )
+include( "cl_outsiderender.lua" )
+include( "cl_planet.lua" )
+include( "cl_fakeroom.lua" )
 
 MAT_PLAYER = Material( "playersheet.png", "nocull 1 smooth 0" )
 	-- MAT_PLAYER:SetInt( "$flags", bit.bor( MAT_PLAYER:GetInt( "$flags" ), 2 ^ 8 ) )
@@ -104,8 +107,8 @@ function GM:PreRender()
 end
 
 function GM:PreDrawOpaqueRenderables()
-	render.Clear( 0, 0, 0, 255 )
-	render.ClearDepth()
+	-- render.Clear( 0, 0, 0, 255 )
+	-- render.ClearDepth()
 end
 
 function GM:PrePlayerDraw( ply )
@@ -275,7 +278,7 @@ function GM:CalcView( ply, pos, ang, fov )
 			view.angles = Angle( 0, 90, 0 )
 		end
 	view.fov = fov
-	view.zfar = 1000
+	-- view.zfar = 1000
 
 	return view
 end
@@ -391,4 +394,44 @@ end )
 
 concommand.Add( "ggcj_getent", function( ply, cmd, args )
 	-- TODO get trace ent and displays
+end )
+
+concommand.Add( "ggcj_getprops", function( ply, cmd, args )
+	-- Get trace entity
+	local tr = util.TraceLine( {
+		start = ply:EyePos(),
+		endpos = ply:EyePos() + ply:EyeAngles():Forward() * 10000,
+		filter = ply,
+	} )
+
+	local function add( ent, pos, ang )
+		return "	{\n" ..
+			"		\"" .. ent:GetModel() .. "\",\n" ..
+			"		" .. GetPrettyVector( pos ) .. ",\n" ..
+			"		" .. GetPrettyAngle( ang ) .. ",\n" ..
+		"	},\n"
+	end
+
+	local formatted = "{\n"
+	if ( tr.Entity ) then
+		-- Add first at zero
+		local pos_base = tr.Entity:GetPos()
+		local ang_base = tr.Entity:GetAngles()
+		local pos = Vector( 0, 0, 0 )
+		local ang = Angle( 0, 0, 0 )
+		formatted = formatted .. add( tr.Entity, pos, ang )
+
+		-- Find all other props
+		for k, ent in pairs( ents.FindByClass( "prop_physics" ) ) do
+			if ( ent != tr.Entity ) then
+				-- Their position relative to this base ent
+				pos = ent:GetPos() - pos_base
+				ang = ent:GetAngles() - ang_base
+				formatted = formatted .. add( ent, pos, ang )
+			end
+		end
+	end
+	formatted = formatted .. "}"
+
+	print( formatted )
 end )

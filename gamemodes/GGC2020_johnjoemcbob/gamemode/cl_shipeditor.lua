@@ -23,18 +23,35 @@ hook.Add( "PostDrawOpaqueRenderables", HOOK_PREFIX .. "_ShipEditor_PostDrawOpaqu
 	-- if ( ShipEditor.VGUI and ShipEditor.VGUI:IsVisible() and ShipEditor.ShipParts ) then
 	if ( ShipEditor.ShipParts ) then
 		for k, v in pairs( ShipEditor.ShipParts ) do
+			local pos = SHIPEDITOR_ORIGIN( #Ship.Ship + 1 ) +
+							Vector(
+								v.Grid.x + math.floor( v.Collisions.x / 2 ) + SHIPPARTS[v.Name][3].x,
+								-v.Grid.y - math.floor( v.Collisions.y / 2 ) + SHIPPARTS[v.Name][3].y
+							) * SHIPPART_SIZE
+
 			GAMEMODE.RenderCachedModel(
 				SHIPPARTS[v.Name][1],
-				SHIPEDITOR_ORIGIN( #Ship.Ship + 1 ) +
-					Vector(
-						v.Grid.x + math.floor( v.Collisions.x / 2 ) + SHIPPARTS[v.Name][3].x,
-						-v.Grid.y - math.floor( v.Collisions.y / 2 ) + SHIPPARTS[v.Name][3].y
-					) * SHIPPART_SIZE,
+				pos,
 				Angle( 0, 90 * v.Rotation, 0 ),
 				Vector( 1, 1, 1 ),
 				nil,
 				Color( 255, 255, 255, 128 )
 			)
+
+			if ( v.AttachPoints ) then
+				for _, attach in pairs( v.AttachPoints ) do
+					if ( attach.Disabled ) then
+						GAMEMODE.RenderCachedModel(
+							SHIPENDCAP,
+							pos + Vector( attach[1].x, -attach[1].y ) * SHIPPART_SIZE / 2,
+							Angle( 90, 90 + attach[2], 0 ),
+							Vector( 1, 1, 1 ) * 0.9,
+							nil,
+							Color( 255, 255, 255, 128 )
+						)
+					end
+				end
+			end
 		end
 	end
 end )
@@ -51,6 +68,12 @@ hook.Add( "CreateMove", HOOK_PREFIX .. "ShipEditor_CreateMove", function()
 			local w, h = v:GetSize()
 			v:SetSize( h, w )
 			v.Collisions = Vector( v.Collisions.y, v.Collisions.x )
+
+			-- Attach points
+			for k, attach in pairs( v.AttachPoints ) do
+				attach[1] = Vector( attach[1].y, -attach[1].x )
+				attach[2] = attach[2] + 90
+			end
 		else
 			-- TODO Try to find piece under mouse cursor
 		end
@@ -102,6 +125,7 @@ function ShipEditor.SendToServer()
 	local tab = table.shallowcopy( ShipEditor.ShipParts )
 		for k, v in pairs( tab ) do
 			v.Collisions = nil
+			v.Panel = nil
 		end
 	PrintTable( tab )
 	net.Start( NET_SHIPEDITOR_SPAWN )
@@ -316,17 +340,14 @@ function ShipEditor.AddPartSpawner( self, name, index, force, pos )
 	-- if ( !self.CellSize ) then return end
 
 	local spawner
-			-- if ( self.Spawners[name] ) then
-				-- pos = self.Spawners[name].DefaultPos
-				if ( self.Spawners[name] and !force ) then
-					return self.Spawners[name]
-				end
-			-- else
-			if ( !pos ) then
-				pos = self:GetFirstFreeSpawnerPos( SHIPPARTS[name][2] )
-				pos.x = 10 + pos.x * self.CellSize
-				pos.y = 10 + pos.y * self.CellSize
-			end
+		if ( self.Spawners[name] and !force ) then
+			return self.Spawners[name]
+		end
+		if ( !pos ) then
+			pos = self:GetFirstFreeSpawnerPos( SHIPPARTS[name][2] )
+			pos.x = 10 + pos.x * self.CellSize
+			pos.y = 10 + pos.y * self.CellSize
+		end
 		if ( !index ) then
 			index = tablelength( self.Spawners )
 		end
@@ -352,6 +373,7 @@ function ShipEditor.AddPartSpawner( self, name, index, force, pos )
 				spawner.Index = index
 				spawner.Rotation = 0
 				spawner.Collisions = SHIPPARTS[name][2]
+				spawner.AttachPoints = table.shallowcopy( SHIPPARTS[name].AttachPoints )
 				spawner.DefaultPos = Vector( pos.x, pos.y )
 			self.Spawners[name] = spawner
 		-- end
@@ -408,8 +430,12 @@ function ShipEditor.OnDrop( self, v, add )
 			Rotation = v.Rotation,
 			Grid = v.Grid,
 			Collisions = v.Collisions,
+			AttachPoints = v.AttachPoints,
+			Panel = v,
 		}
 		self:SetCollision( self.ShipParts[v.Added], true )
+
+		self:UpdateAttachPoints( v )
 
 		v:SetParent( self.Left )
 		v:SetPos( v.Grid.x * self.CellSize + 1, ystart + ( v.Grid.y - 1 ) * self.CellSize + 1 )
@@ -418,10 +444,82 @@ function ShipEditor.OnDrop( self, v, add )
 		local old = self.ShipParts[v.Added]
 		self:SetCollision( old, false )
 		self.ShipParts[v.Added] = nil
+
+		self:RemoveAttachPoints( v )
 	end
 
 	-- Temp, should only save if something changed, at least
 	self:SaveShip()
+end
+
+function ShipEditor.UpdateAttachPoints( self, v, recursed )
+	if ( !v.AttachPoints ) then return end
+
+	-- Create buttons if none
+	if ( !v.AttachButtons ) then
+		v.AttachButtons = {}
+		for k, attach in pairs( v.AttachPoints ) do
+			local button = vgui.Create( "DButton", self.Left )
+				button:SetText( "" )
+				button.Paint = function( self, w, h )
+					local col = Color( 0, 255, 100, 255 )
+						if ( self.Disabled ) then
+							col = Color( 255, 0, 100, 100 )
+						end
+					surface.SetDrawColor( col )
+					surface.DrawRect( 0, 0, w, h )
+				end
+				button.DoClick = function( self )
+					self.Disabled = !self.Disabled
+					attach.Disabled = self.Disabled
+				end
+			table.insert( v.AttachButtons, button )
+		end
+	end
+
+	-- Update buttons to new attach point positions
+	for k, attach in pairs( v.AttachPoints ) do
+		local button = v.AttachButtons[k]
+
+		local size = self.CellSize
+		local pos = attach[1]
+		local ang = attach[2]
+			-- ang = ang + v.Rotation * 90
+		local w = size
+		local h = 16
+			if ( ang % 180 != 0 ) then
+				w = h
+				h = size
+			end
+		local x, y = v.Grid.x * size + 1, ystart + ( v.Grid.y - 1 ) * size + 1
+		button:SetPos( x + ( pos.x + 1 ) * size / 2 - w / 2, y + ( pos.y + 1 ) * size / 2 - h / 2 )
+		button:SetSize( w, h )
+	end
+
+	-- Check attach points for collision, in which case they are invalid
+	for k, attach in pairs( v.AttachPoints ) do
+		local button = v.AttachButtons[k]
+
+		local pos = v.Grid + attach[1]
+		if ( !self:CanDrop( v, pos.x, pos.y ) ) then
+			-- Hide off screen..
+			button:SetPos( -100, -100 )
+		end
+	end
+
+	-- Get all neighbours and check those again, but don't recurse further than that
+	if ( !recursed ) then
+		-- TODO currently just updates all...
+		for k, part in pairs( self.ShipParts ) do
+			self:UpdateAttachPoints( part.Panel, true )
+		end
+	end
+end
+
+function ShipEditor.RemoveAttachPoints( self, v )
+	for k, button in pairs( v.AttachButtons ) do
+		button:Remove()
+	end
 end
 
 function ShipEditor.SetCollision( self, v, on )

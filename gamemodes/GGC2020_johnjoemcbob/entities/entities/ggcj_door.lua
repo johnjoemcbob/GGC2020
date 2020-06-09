@@ -14,7 +14,7 @@ ENT.RenderGroup = RENDERGROUP_BOTH
 local size = SHIPPART_SIZE
 local depth = 10
 local mins = Vector( -depth, -size / 2, 0 )
-local maxs = Vector( depth, size / 2, size )
+local maxs = Vector( depth, size / 2, size * 0.75 )
 
 function ENT:SetupDataTables()
 	self:NetworkVar( "Bool", 0, "Open" )
@@ -33,11 +33,12 @@ function ENT:Initialize()
 
 	if ( SERVER ) then
 		self:SetUseType( ONOFF_USE )
-		
+
 		local ent = GAMEMODE.CreateProp( "models/cerus/modbridge/misc/doors/door11a.mdl", self:GetPos(), self:GetAngles(), false )
-		ent:SetModelScale( 0.999 ) -- TODO try to avoid z fighting
-		ent:SetColor( self:GetColor() )
-		-- ent:SetParent( self )
+			ent:SetModelScale( 0.999 ) -- TODO try to avoid z fighting
+			ent:SetColor( self:GetColor() )
+			ent:SetMoveType( MOVETYPE_NONE )
+			-- ent:SetParent( self )
 		self.OuterFrame = ent
 	end
 end

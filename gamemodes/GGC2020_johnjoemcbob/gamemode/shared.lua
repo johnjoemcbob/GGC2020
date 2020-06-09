@@ -29,8 +29,11 @@ COLOUR_WHITE		= Color( 255, 255, 255, 255 )
 COLOUR_LIT			= Color( 255, 255, 255, 255 )
 COLOUR_UNLIT		= Color( 100, 100, 100, 255 )
 COLOUR_GLASS		= Color( 50, 100, 255, 255 )
+
+-- Ship part size
 SHIPPART_SIZE		= 128 + 22
-SHIPPART_SIZE_2D	= 2
+SHIPPART_SIZE_2D	= 8
+
 SHIPEDITOR_ORIGIN	= function( index )
 	return Vector( -489, 426, -21 + ( SHIPPART_SIZE + 4 ) * 2 * ( index - 1 ) )
 end
@@ -50,6 +53,12 @@ SHIPPARTS = {
 			AddRotatableSegment( x, y, 1, 2, w, h, self.Rotation )
 			AddRotatableSegment( x, y, 3, 2, w, h, self.Rotation )
 		end,
+		AttachPoints = {
+			{ Vector( 1, 0 ), 90 },
+			{ Vector( -1, 0 ), 90 },
+			{ Vector( 0, 1 ), 0 },
+			{ Vector( 0, -1 ), 0 },
+		},
 	},
 	["c-111"] = {
 		"models/cerus/modbridge/core/c-111.mdl",
@@ -60,6 +69,10 @@ SHIPPARTS = {
 			AddRotatableSegment( x, y, 2, 2, w, h, self.Rotation )
 			AddRotatableSegment( x, y, 2, 3, w, h, self.Rotation )
 		end,
+		AttachPoints = {
+			{ Vector( -1, 0 ), 90 },
+			{ Vector( 0, 1 ), 0 },
+		},
 	},
 	["s-111"] = {
 		"models/cerus/modbridge/core/s-111.mdl",

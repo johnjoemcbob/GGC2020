@@ -87,6 +87,10 @@ function GetPrettyVector( vector )
 	return "Vector( " .. math.Round( vector.x ) .. ", " .. math.Round( vector.y ) .. ", " .. math.Round( vector.z ) .. " )"
 end
 
+function GetPrettyAngle( angle )
+	return "Angle( " .. math.Round( angle.p ) .. ", " .. math.Round( angle.y ) .. ", " .. math.Round( angle.r ) .. " )"
+end
+
 function rotate_point( pointX, pointY, originX, originY, angle )
     angle = angle * math.pi / 180
     return {
@@ -108,12 +112,18 @@ function getpolygonfromsquare( x, y, w, h, ang )
 		for k, rotated in pairs( lines ) do
 			table.insert( poly, rotated )
 
-			-- surface.DrawCircle( rotated[1] - w / 2, rotated[2] - w / 2, 4, Color( 255, 120, 0 ) )
+			if ( CLIENT ) then
+				local pos = DEBUG_SHIP_COLLISION_POS
+				surface.DrawCircle( pos.x + rotated[1] - w / 2, pos.y + rotated[2] - w / 2, 4, Color( 255, 120, 0 ) )
+			end
 			local next = k + 1
 				if ( k == 4 ) then
 					next = 1
 				end
-			-- surface.DrawLine( rotated[1] - w / 2, rotated[2] - h / 2, lines[next][1] - w / 2, lines[next][2] - h / 2 )
+			if ( CLIENT ) then
+				local pos = DEBUG_SHIP_COLLISION_POS
+				surface.DrawLine( pos.x + rotated[1] - w / 2, pos.y + rotated[2] - h / 2, pos.x + lines[next][1] - w / 2, pos.y + lines[next][2] - h / 2 )
+			end
 		end
 	return poly
 end
