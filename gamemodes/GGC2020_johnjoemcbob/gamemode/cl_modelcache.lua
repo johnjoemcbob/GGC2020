@@ -41,6 +41,8 @@ function GM.RenderCachedModel( model, pos, ang, sca, mat, col, ren, extra )
 		end
 		ent:DrawModel()
 	render.SetColorModulation( 1, 1, 1 )
+
+	return ent
 end
 
 function GM.AddModel( mdl, pos, ang, scale, mat, col, ren )

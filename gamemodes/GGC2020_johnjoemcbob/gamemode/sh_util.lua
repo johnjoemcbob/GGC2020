@@ -200,6 +200,48 @@ function intersect_ray_plane( ray, plane )
 	return ray.position + ray.direction * t, t
 end
 
+-- point is a vector
+-- rect.min is a vector
+-- rect.max is a vector
+-- angle is a float
+function intersect_point_rotated_rect( point, rect, angle )
+	-- From: https://love2d.org/forums/viewtopic.php?t=11585
+	local function area( tri )
+		local x1, y1 = tri[1].x, tri[1].y
+		local x2, y2 = tri[2].x, tri[2].y
+		local x3, y3 = tri[3].x, tri[3].y
+		return math.abs( ( x1*y2 + x2*y3 + x3*y1 - x1*y3 - x3*y2 - x2*y1) / 2 )
+	end
+	local function point_on_triangle(P,A,B,C)
+		local area0=area( { A, B, C } )
+		local area1=area( { P, B, C } )
+		local area2=area( { A, P, C } )
+		local area3=area( { A, B, P } )
+		local sum = area1 + area2 + area3
+		local eps = 0.0001
+		return area0 > sum - eps and area0 <area0 + eps
+	end
+	local function point_on_square(point,tab)	-- Uses sum-of-areas approach
+		local test1 = point_on_triangle(point,tab[1],tab[2],tab[3])
+		local test2 = point_on_triangle(point,tab[3],tab[4],tab[1])
+		return test1 or test2
+	end
+
+	-- First get all initial non-rotated rect points
+	local points = {
+		rect.min,
+		Vector( rect.min.x, rect.max.y ),
+		rect.max,
+		Vector( rect.max.x, rect.min.y ),
+	}
+
+	-- Rotate rect points
+	-- TODO
+
+	-- Check both triangles making this rect
+	return point_on_square( point, points )
+end
+
 -- Create a physics prop which is frozen by default
 -- Model (String), Position (Vector), Angle (Angle), Should Move? (bool)
 function GM.CreateProp( mod, pos, ang, mov )

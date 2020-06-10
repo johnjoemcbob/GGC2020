@@ -20,6 +20,8 @@ local TargetPos = PlayerPos
 local Speed = 50
 local LastLeft = true
 
+local BoundsMultiplier = 1.2
+
 GM.AddPlayerState( STATE_PLANET, {
     OnStart = function( self, ply )
         ply:HideFPSController()
@@ -39,6 +41,42 @@ GM.AddPlayerState( STATE_PLANET, {
 })
 
 if ( CLIENT ) then
+    local Collisions = nil
+    function DoesCollide( pos )
+        for k, collide in pairs( Collisions ) do
+            if ( intersect_point_rotated_rect( pos, collide, collide.angle ) ) then
+                return true
+            end
+        end
+        return false
+    end
+
+    function TestPathTo( pos )
+        --PlayerPos = 
+
+        -- From current pos
+        -- To target pos
+        -- Direction
+        -- Break into path segments
+        -- Check for collision at each stage, store last valid otherwise
+        local dir = ( pos - PlayerPos ):GetNormalized()
+        local segdist = 10
+        local segs = math.ceil( ( pos - PlayerPos ):Length() / segdist )
+        local lastvalid = PlayerPos
+            for seg = 1, segs do
+                local trypos = PlayerPos + dir * seg * segdist
+                    if ( seg == segs ) then
+                        trypos = pos
+                    end
+                    --debugoverlay.Cross( trypos, 10, 1, Color( 255, 255, 0, 255 ), false )
+                if ( DoesCollide( trypos ) ) then
+                    break
+                end
+                lastvalid = trypos
+            end
+        return lastvalid
+    end
+
     hook.Add( "PostDrawTranslucentRenderables", HOOK_PREFIX .. "Planet_PostDrawTranslucentRenderables", function()
         if ( LocalPlayer():GetStateName() != STATE_PLANET ) then return end
 
@@ -55,15 +93,60 @@ if ( CLIENT ) then
         )
 
         -- Render details
+        local storecollisions = false
+        if ( !Collisions ) then
+            -- Initial collisions
+            Collisions = {}
+                -- One for each room edge
+                local mult = 0.9
+                local dirs = {
+                    Vector( 1, 0 ),
+                    Vector( -1, 0 ),
+                    Vector( 0, 1 ),
+                    Vector( 0, -1 ),
+                }
+                for k, dir in pairs( dirs ) do
+                    local z = -0.15
+                    local min = Vector( dir.x * mult - 0.5, dir.y * mult - 0.5, z )
+                    local max = Vector( dir.x * mult - 0.5 + 1, dir.y * mult - 0.5 + 1, z )
+                    table.insert( Collisions, {
+                        min = RoomPos + min * 3 * SHIPPART_SIZE,
+                        max = RoomPos + max * 3 * SHIPPART_SIZE,
+                        angle = 0
+                    } )
+                end
+            storecollisions = true
+        end
         for k, detail in pairs( ROOM_PROPS ) do
             local scale = detail[4] or Vector( 1, 1, 1 )
-            GAMEMODE.RenderCachedModel(
+            local ent = GAMEMODE.RenderCachedModel(
                 detail[1],
                 RoomPos + detail[2],
                 detail[3],
                 scale
             )
+
+            -- If first render then also store collision data
+            if ( storecollisions ) then
+                if ( detail[2].z < 0 ) then
+                    local min, max = ent:GetRenderBounds()
+
+                    table.insert( Collisions, {
+                        min = RoomPos + detail[2] + min * BoundsMultiplier,
+                        max = RoomPos + detail[2] + max * BoundsMultiplier,
+                        angle = detail[3].y
+                    } )
+                end
+            end
         end
+
+        -- Debug render collisions
+        -- for k, collide in pairs( Collisions ) do
+        --     collide.max.z = collide.min.z + 1
+        --     cam.IgnoreZ( true )
+        --         render.DrawBox( Vector( 0, 0, 0 ), Angle( 0, 0, 0 ), collide.min, collide.max, Color( 255, 255, 0, 255 ) )
+        --     cam.IgnoreZ( false )
+        -- end
 
         -- Test interaction
         if ( input.IsMouseDown( MOUSE_LEFT ) or PlayerPos == RoomPos ) then
@@ -81,7 +164,9 @@ if ( CLIENT ) then
             }
             local pos = intersect_ray_plane( ray, plane )
             if ( pos ) then
-                TargetPos = pos
+                --if ( !DoesCollide( pos ) ) then
+                   TargetPos = TestPathTo( pos )
+                --end
             end
             if ( PlayerPos == RoomPos ) then
                 PlayerPos = pos
