@@ -36,8 +36,10 @@ end
 
 -- Net
 local NETSTRING = HOOK_PREFIX .. "Net_PlayerState"
+local NETSTRING_REQUEST = HOOK_PREFIX .. "Net_PlayerState_Request"
 if ( SERVER ) then
 	util.AddNetworkString( NETSTRING )
+	util.AddNetworkString( NETSTRING_REQUEST )
 
 	function GM.BroadcastPlayerState( ply, oldstate, newstate )
 		-- Communicate to client
@@ -47,6 +49,12 @@ if ( SERVER ) then
 			net.WriteString( newstate )
 		net.Broadcast()
 	end
+	
+	net.Receive( NETSTRING_REQUEST, function( lngth, ply )
+		local state = net.ReadString()
+
+		ply:SwitchState( state )
+	end )
 end
 if ( CLIENT ) then
 	net.Receive( NETSTRING, function( lngth )
@@ -60,6 +68,13 @@ if ( CLIENT ) then
 		end
 		GAMEMODE.PlayerStates[newstate]:OnStart( ply )
 	end )
+
+	function GM.RequestSwitchPlayerState( state )
+		-- Communicate to client
+		net.Start( NETSTRING_REQUEST )
+			net.WriteString( state )
+		net.SendToServer()
+	end
 end
 
 -- Player meta functions
@@ -70,7 +85,7 @@ if ( SERVER ) then
 		self:SetNWString( "PlayerState", state )
 	end
 	-- Start and finish properly
-	function meta:SwitchState( state )
+	function meta:SwitchState( state, nofade )
 		if ( self:GetStateName() == state ) then return end
 
 		local oldstate = self:GetStateName()
@@ -80,8 +95,17 @@ if ( SERVER ) then
 		self:SetState( state )
 		self:GetState():OnStart( self )
 
+		if ( !nofade ) then
+			self:ScreenFade( SCREENFADE.IN, Color( 0, 0, 0, 255 ), 1, 0 )
+		end
+
 		-- Send to clients too
 		GAMEMODE.BroadcastPlayerState( self, oldstate, state )
+	end
+end
+if ( CLIENT ) then
+	function meta:SwitchState( state )
+		GAMEMODE.RequestSwitchPlayerState( state )
 	end
 end
 function meta:GetState()
@@ -96,8 +120,9 @@ function meta:HideFPSController()
 			self:GetPos(),
 			self:EyeAngles()
 		}
-		self:SetPos( Vector( 947, -630, -144 ) )
 		if ( SERVER ) then
+			self:ExitVehicle()
+			self:SetPos( Vector( 947, -630, -144 ) )
 			self:Lock()
 		end
 	end

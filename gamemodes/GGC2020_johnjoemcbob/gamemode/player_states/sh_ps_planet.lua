@@ -5,28 +5,55 @@
 -- State: Planetside
 --
 
+-- TODO binoculars and sharpen for cctv look
+
 STATE_PLANET = "PLANET"
 
+MAT_BARTENDER = Material( "bartender.png", "nocull 1 smooth 0" )
 local MODEL_ROOM = "models/cerus/modbridge/core/sc-332.mdl"
 local ROOM_PROPS = {}
 local RoomPos = Vector( -320, 520, 355 )
 local RoomAngles = Angle( 0, -90, 0 )
-local CameraPos = RoomPos + Vector( 3 / 2, 3 / 2, 2 ) * SHIPPART_SIZE * 0.7
-local CameraAngles = Angle( 40, -130, 0 )
+local CameraPos = {
+    RoomPos + Vector( -1, 3, -0.5 ) * SHIPPART_SIZE * 0.7,
+    RoomPos + Vector( 3 / 2, 3 / 2, 2 ) * SHIPPART_SIZE * 0.7,
+}
+local CameraAngles = {
+    Angle( -20, -90, 0 ),
+    Angle( 40, -130, 0 ),
+}
 local CameraFOV = 50
 local PlayerSize = 80
-local PlayerPos = RoomPos
-local TargetPos = PlayerPos
+local PlayerPos = nil
+local TargetPos = nil
 local Speed = 50
 local LastLeft = true
+local CurrentCamera = {
+    CameraPos[1],
+    CameraAngles[1],
+}
+local AnimProgress = 0
+local IntroSpeed = 0.2
 
 local BoundsMultiplier = 1.2
+
+-- TEMP
+PlayerPos = CameraPos[1] + Vector( 0, -0.5 ) * SHIPPART_SIZE
+TargetPos = PlayerPos + Vector( 0, -1 ) * SHIPPART_SIZE -- TEMP
 
 GM.AddPlayerState( STATE_PLANET, {
     OnStart = function( self, ply )
         ply:HideFPSController()
         if ( CLIENT ) then
             gui.EnableScreenClicker( true )
+
+            CurrentCamera = {
+                CameraPos[1],
+                CameraAngles[1],
+            }
+            AnimProgress = 0
+            PlayerPos = CameraPos[1] + Vector( 0, -0.5 ) * SHIPPART_SIZE
+            TargetPos = PlayerPos + Vector( 0, -1 ) * SHIPPART_SIZE
         end
     end,
     OnThink = function( self, ply )
@@ -149,33 +176,56 @@ if ( CLIENT ) then
         -- end
 
         -- Test interaction
-        if ( input.IsMouseDown( MOUSE_LEFT ) or PlayerPos == RoomPos ) then
-            local halfscreen = Vector( ScrW() / 2, ScrH() / 2 )
-            local aspect = 1 + ( ScrH() / ScrW() ) / 2
-            local mouseoff = ( Vector( gui.MouseX(), gui.MouseY() ) - halfscreen ) * aspect
-                mouseoff = mouseoff + halfscreen
-            local ray = {
-                position = CameraPos,
-                direction = util.AimVector( CameraAngles, CameraFOV, mouseoff.x, mouseoff.y, ScrW(), ScrH() ),
-            }
-            local plane = {
-                position = RoomPos + Vector( 0, 0, 1 ) * -SHIPPART_SIZE * 0.4,
-                normal = Vector( 0, 0, 1 ),
-            }
-            local pos = intersect_ray_plane( ray, plane )
-            if ( pos ) then
-                --if ( !DoesCollide( pos ) ) then
-                   TargetPos = TestPathTo( pos )
-                --end
+        if ( AnimProgress >= 1 ) then
+            if ( input.IsMouseDown( MOUSE_LEFT ) ) then
+                local halfscreen = Vector( ScrW() / 2, ScrH() / 2 )
+                local aspect = 1 + ( ScrH() / ScrW() ) / 2
+                local mouseoff = ( Vector( gui.MouseX(), gui.MouseY() ) - halfscreen ) * aspect
+                    mouseoff = mouseoff + halfscreen
+                local ray = {
+                    position = CurrentCamera[1],
+                    direction = util.AimVector( CurrentCamera[2], CameraFOV, mouseoff.x, mouseoff.y, ScrW(), ScrH() ),
+                }
+                local plane = {
+                    position = RoomPos + Vector( 0, 0, 1 ) * -SHIPPART_SIZE * 0.4,
+                    normal = Vector( 0, 0, 1 ),
+                }
+                local pos = intersect_ray_plane( ray, plane )
+                --print( pos )
+                if ( pos ) then
+                    --if ( !DoesCollide( pos ) ) then
+                    TargetPos = TestPathTo( pos )
+                    --end
+                end
             end
-            if ( PlayerPos == RoomPos ) then
-                PlayerPos = pos
+
+            -- Exit zone
+            local dist = PlayerPos:Distance( Vector( -425, 655, 295 ) )
+            if ( dist < 15 ) then
+                LocalPlayer():SwitchState( STATE_FROM_PLANET_ANIM )
             end
+        else
+            AnimProgress = math.Approach( AnimProgress, 1, FrameTime() * IntroSpeed )
+
+            CurrentCamera = {
+                LerpVector( AnimProgress, CameraPos[1], CameraPos[2] ),
+                LerpAngle( AnimProgress, CameraAngles[1], CameraAngles[2] ),
+            }
         end
 
         -- Movement
         PlayerPos = ApproachVector( FrameTime() * Speed, PlayerPos, TargetPos )
 
+        -- Render Bartender
+        local pos = Vector( -324, 379, 225 )
+        GAMEMODE:DrawBillboardedUVs( 
+            pos,
+            Vector( 0.6, 1 ) * PlayerSize,
+            MAT_BARTENDER,
+            0, 0, 1, 1,
+            false
+        )
+    
         -- Render self
         local mat = MAT_PLAYER
         local anim = "idle"
@@ -192,13 +242,19 @@ if ( CLIENT ) then
         local frame = math.floor( CurTime() * ( data.Speed ) % #data + 1 )
         local left = LastLeft
         local u1, v1, u2, v2 = GetUVs( mat, anim, frame )
-        GAMEMODE:DrawBillboardedUVs( PlayerPos + Vector( 0, 0, -PlayerSize ) * 0.92, Vector( 0.6, 1 ) * PlayerSize, mat, u1, v1, u2, v2, left )
+        GAMEMODE:DrawBillboardedUVs(
+            PlayerPos + Vector( 0, 0, -PlayerSize ) * 0.92,
+            Vector( 0.6, 1 ) * PlayerSize,
+            mat,
+            u1, v1, u2, v2,
+            !left
+        )
     end )
 
     hook.Add( "CalcView", HOOK_PREFIX .. "Planet_CalcView", function( ply, pos, angles, fov )
         if ( LocalPlayer():GetStateName() == STATE_PLANET ) then
-            local pos = CameraPos
-            local ang = CameraAngles
+            local pos = CurrentCamera[1]
+            local ang = CurrentCamera[2]
 
             local view = {}
                 view.origin = pos
@@ -214,6 +270,19 @@ if ( CLIENT ) then
     hook.Add( "HUDPaint", HOOK_PREFIX .. "Planet_HUDPaint", function()
         if ( LocalPlayer():GetStateName() == STATE_PLANET ) then
             --draw.RoundedBox( 0, testpos.x, testpos.y, 1, 1, COLOUR_WHITE )
+        end
+	end )
+ 
+    local border = 320
+    local mat = Material( "dev/dev_prisontvoverlay001" )
+    hook.Add( "RenderScreenspaceEffects", HOOK_PREFIX .. "Planet_RenderScreenspaceEffects", function()
+        if ( LocalPlayer():GetStateName() == STATE_PLANET ) then
+            DrawMaterialOverlay( "effects/combine_binocoverlay", -0.02 )
+            --DrawMaterialOverlay( "dev/dev_prisontvoverlay001", -0.02 )
+                surface.SetDrawColor( 255, 255, 255, 255 )
+                surface.SetMaterial( mat )
+                surface.DrawTexturedRect( -border, -border, ScrW() + border * 2, ScrH() + border * 2 )
+            DrawSharpen( 20, -0.09 )
         end
 	end )
 end

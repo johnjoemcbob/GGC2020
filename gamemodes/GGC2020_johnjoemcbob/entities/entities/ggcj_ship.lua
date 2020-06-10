@@ -47,20 +47,12 @@ function ENT:Initialize()
 	self.Decceleration = 100 * self.Multiplier
 	self.MaxSpeed = 100 * self.Multiplier
 	self.MaxRotateSpeed = 0.5 * self.Multiplier
-	self.MaxVelocity = 1000 * self.Multiplier
+	self.MaxVelocity = 100 * self.Multiplier
 end
 
 DEBUG = true
 function ENT:MoveInput( ply )
 	if ( !DEBUG and tablelength( self.CurrentCollisions ) > 0 ) then return end
-
-	-- TODO TEMP
-	self.SideSpeedMult = 0.02
-	self.MaxVelocity = 100 * self.Multiplier
-	self.MaxRotateSpeed = 0.5 * self.Multiplier
-
-	-- Drag/Dampen?
-	self:Set2DVelocity( ApproachVector( FrameTime() * self.Decceleration, self:Get2DVelocity(), Vector( 0, 0, 0 ) ) )
 
 	-- Input
 	local moving = false
@@ -150,8 +142,13 @@ function ENT:Think()
 
 	-- Move & then collision detect
 	if ( SERVER ) then
+		-- Drag/Dampen?
+		self:Set2DVelocity( ApproachVector( FrameTime() * self.Decceleration, self:Get2DVelocity(), Vector( 0, 0, 0 ) ) )
+
+		-- Move
 		self:Set2DPos( self:Get2DPos() + self:Get2DVelocity() * FrameTime() )
 
+		-- Collision
 		local collisions = Ship:CheckCollision( self )
 		for collide, bool in pairs( collisions ) do
 			if ( self.CurrentCollisions[collide] ) then
@@ -243,31 +240,14 @@ if ( CLIENT ) then
 
 		local cellsize = SHIPPART_SIZE_2D
 		if ( self.Constructor and self.Pos ) then
-			local mat = Matrix()
-				if ( self.Pos != Vector( 0, 0, 0 ) ) then
-					-- Translate back onto vgui
-					mat:Rotate( Angle( 0, 0, 90 ) )
-					-- print( self.Pos.x )
-					-- mat:Translate( Vector( self.Pos.x / 3.5, self.Pos.z + 60, -self.Pos.y ) )
-					mat:Translate( Vector( -640, self.Pos.z + 60, -self.Pos.y ) )
-					mat:Scale( Vector( 1, 1, 1 ) * 0.4 )
-
-					-- Translate this ship
-					mat:Translate( Vector( x, -y ) / 0.4 )
-					mat:Rotate( Angle( 0, -self:Get2DRotation(), 0 ) )
-					mat:Translate( Vector(
-						-( ( self.Size.x / 2 + self.Min.x ) * cellsize ),
-						-( ( self.Size.y / 2 + self.Min.y ) * cellsize )
-					) / 0.4 )
-				else
-					-- Translate this ship
-					mat:Translate( Vector( x, y ) )
-					mat:Rotate( Angle( 0, self:Get2DRotation(), 0 ) )
-					mat:Translate( Vector(
-						-( ( self.Size.x / 2 + self.Min.x ) * cellsize ),
-						-( ( self.Size.y / 2 + self.Min.y ) * cellsize )
-					) )
-				end
+			local mat = cam.GetModelMatrix()
+				-- Translate this ship
+				mat:Translate( Vector( x, y ) )
+				mat:Rotate( Angle( 0, self:Get2DRotation(), 0 ) )
+				mat:Translate( Vector(
+					-( ( self.Size.x / 2 + self.Min.x ) * cellsize ),
+					-( ( self.Size.y / 2 + self.Min.y ) * cellsize )
+				) )
 			cam.PushModelMatrix( mat )
 				local index = 0
 				for k, part in pairs( self.Constructor ) do
@@ -309,7 +289,7 @@ function ENT:GetPosFrom2D()
 end
 
 function ENT:GetMapPos()
-	return Vector( 100, 48, SHIPEDITOR_ORIGIN( self:GetIndex() ).z + 40 )
+	return Vector( -370, 48, SHIPEDITOR_ORIGIN( self:GetIndex() ).z + 40 )
 end
 
 function ENT:Forward()

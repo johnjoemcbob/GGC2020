@@ -244,6 +244,12 @@ if ( CLIENT ) then
 					ship.Pos = self.Pos
 					ship:HUDPaint( sx, sy, sw, col )
 
+					-- Draw system objects
+					-- TODO
+					--for k, ent in pairs( things ) do
+						-- yeah
+					--end
+
 					-- Draw all other ships based on this position
 					local ox, oy = sx, sy
 					for k, other in pairs( Ship.Ship ) do
@@ -273,16 +279,20 @@ if ( CLIENT ) then
 				local pos = ship:GetMapPos()
 
 				sampleFrame.Pos = pos
-				vgui.Start3D2D( pos, Angle( 0, 0, 90 ), 0.4 )
-					sampleFrame:Paint3D2D()
-				vgui.End3D2D()
+				
+				cam.Start3D2D( pos, Angle( 0, 0, 90 ), 0.4 )
+					sampleFrame:Paint( 200, 200 )
+				cam.End3D2D()
+				--vgui.Start3D2D( pos, Angle( 0, 0, 90 ), 0.4 )
+				--	sampleFrame:Paint3D2D()
+				--vgui.End3D2D()
 			end
 		end
 	end )
 
 	hook.Add( "HUDPaint", HOOK_PREFIX .. "ShipMap_HUDPaint", function()
-		-- sampleFrame.Pos = Vector( 0, 0, 0 )
-		-- sampleFrame:Paint( ScrW() / 6, ScrW() / 6 )
+		sampleFrame.Pos = Vector( 0, 0, 0 )
+		sampleFrame:Paint( ScrW() / 6, ScrW() / 6 )
 	end )
 end
 

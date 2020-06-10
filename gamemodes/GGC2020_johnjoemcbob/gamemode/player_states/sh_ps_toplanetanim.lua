@@ -7,16 +7,16 @@
 
 STATE_TO_PLANET_ANIM = "TOPLANETANIM"
 
-DURATION = 3
+DURATION = 1.5
 
 GM.AddPlayerState( STATE_TO_PLANET_ANIM, {
     OnStart = function( self, ply )
         ply:HideFPSController()
-        ply.CurrentStateEnd = CurTime() + DURATION
+        ply.CurrentTime = 0
     end,
     OnThink = function( self, ply )
-        if ( SERVER ) then
-            if ( ply.CurrentStateEnd <= CurTime() ) then
+        if ( CLIENT ) then
+            if ( ply.CurrentTime >= DURATION ) then
                 ply:SwitchState( STATE_PLANET )
                 return
             end
@@ -28,7 +28,7 @@ GM.AddPlayerState( STATE_TO_PLANET_ANIM, {
 })
 
 if ( CLIENT ) then
-    local tab = {
+    PLANET_MODELS = {
         {
             "models/props_combine/combine_mortar01b.mdl",
             Vector( 0, 0, 0 ),
@@ -263,9 +263,9 @@ if ( CLIENT ) then
 
         -- Render planet
         local basepos = Vector( -342, 407, 348 )
-            basepos = basepos + tab[1][2]
-        local baseang = tab[1][3]
-        for k, ent in pairs( tab ) do
+            basepos = basepos + PLANET_MODELS[1][2]
+        local baseang = PLANET_MODELS[1][3]
+        for k, ent in pairs( PLANET_MODELS ) do
             local col = ent.Colour
                 if ( col == nil ) then
                     col = COLOUR_BASE
@@ -286,14 +286,10 @@ if ( CLIENT ) then
 
         -- Move ship
         local ft = FrameTime()
-        ft = 0.016
-        
-        time = time + ft * speed
-            if ( time > 1 ) then
-                time = 0
-            end
-            -- time = 0.6
-        local progress = math.min( 1, time + 0.1 )
+            ft = 0.016 / DURATION / 2
+            LocalPlayer().CurrentTime = LocalPlayer().CurrentTime + ft
+
+        local progress = math.min( 1, LocalPlayer().CurrentTime + 0.1 )
         ShipPos = LerpVector( progress, start, target )
         ShipFOV = Lerp( progress, startfov, targetfov )
 

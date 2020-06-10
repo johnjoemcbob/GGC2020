@@ -16,6 +16,10 @@ GM.AddPlayerState( STATE_SHIP_PILOT, {
             if ( !ply:InVehicle() ) then
                 ply:SwitchState( STATE_FPS )
             end
+
+            if ( ply:KeyDown( IN_WALK ) ) then
+                ply:SwitchState( STATE_TO_PLANET_ANIM )
+            end
         end
     end,
     OnFinish = function( self, ply )

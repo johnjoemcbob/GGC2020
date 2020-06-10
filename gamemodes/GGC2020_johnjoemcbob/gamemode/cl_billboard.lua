@@ -83,10 +83,11 @@ function GM:DrawBillboardedUVs( pos, size, material, u1, v1, u2, v2, left )
 			local ang = LocalPlayer():EyeAngles()
 				if ( LocalPlayer().CalcViewAngles ) then
 					ang = LocalPlayer().CalcViewAngles
+				else
+					ang:RotateAroundAxis( ang:Up(), 90 )
 				end
 				ang.p = 0
 				ang.r = 0
-				ang:RotateAroundAxis( ang:Up(), 90 )
 				-- ang:RotateAroundAxis( ang:Forward(), 180 )
 				ang:RotateAroundAxis( ang:Right(), 180 )
 			matrix:Rotate( ang )
