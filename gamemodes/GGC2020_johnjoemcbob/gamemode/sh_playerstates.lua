@@ -97,10 +97,16 @@ function meta:HideFPSController()
 			self:EyeAngles()
 		}
 		self:SetPos( Vector( 947, -630, -144 ) )
+		if ( SERVER ) then
+			self:Lock()
+		end
 	end
 end
 function meta:ShowFPSController()
 	if ( self.LastFPSController ) then
+		if ( SERVER ) then
+			self:UnLock()
+		end
 		self:SetPos( self.LastFPSController[1] )
 		self:SetEyeAngles( self.LastFPSController[2] )
 		self.LastFPSController = nil

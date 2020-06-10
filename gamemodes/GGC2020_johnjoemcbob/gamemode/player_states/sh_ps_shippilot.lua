@@ -24,13 +24,15 @@ GM.AddPlayerState( STATE_SHIP_PILOT, {
 })
 
 if ( CLIENT ) then
-    hook.Add( "CalcView", HOOK_PREFIX .. "ToPlanetAnim_CalcView", function( ply, pos, angles, fov )
+    hook.Add( "CalcView", HOOK_PREFIX .. "ShipPilot_CalcView", function( ply, pos, ang, fov )
         if ( LocalPlayer():GetStateName() == STATE_SHIP_PILOT ) then
             local view = {}
                 view.origin = pos
                 view.angles = Angle( 0, 90, 0 )
                 view.fov = fov
                 -- view.zfar = 1000
+
+                LocalPlayer().CalcViewAngles = Angle( view.angles.p, view.angles.y, view.angles.r )
             return view
         end
     end )

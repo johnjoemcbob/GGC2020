@@ -30,13 +30,15 @@ if ( CLIENT ) then
             render.ClearDepth()
         end
     end )
-    hook.Add( "CalcView", HOOK_PREFIX .. "FPS_CalcView", function( ply, pos, angles, fov )
+    hook.Add( "CalcView", HOOK_PREFIX .. "FPS_CalcView", function( ply, pos, ang, fov )
         if ( LocalPlayer():GetStateName() == STATE_FPS ) then
             local view = {}
                 view.origin = pos
                 view.angles = ang
                 view.fov = fov
                 view.zfar = 1000
+
+                LocalPlayer().CalcViewAngles = nil
             return view
         end
     end )

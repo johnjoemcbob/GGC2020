@@ -50,6 +50,9 @@ function GM:DrawBillboardedEntBase( ent, material, draw )
 		local matrix = Matrix()
 			matrix:Translate( ent:GetPos() )
 			local ang = LocalPlayer():EyeAngles()
+				if ( LocalPlayer().CalcViewAngles ) then
+					ang = LocalPlayer().CalcViewAngles
+				end
 				ang.p = 0
 				ang.r = 0
 				ang:RotateAroundAxis( ang:Right(), 180 )
@@ -78,6 +81,9 @@ function GM:DrawBillboardedUVs( pos, size, material, u1, v1, u2, v2, left )
 		local matrix = Matrix()
 			matrix:Translate( pos )
 			local ang = LocalPlayer():EyeAngles()
+				if ( LocalPlayer().CalcViewAngles ) then
+					ang = LocalPlayer().CalcViewAngles
+				end
 				ang.p = 0
 				ang.r = 0
 				ang:RotateAroundAxis( ang:Up(), 90 )

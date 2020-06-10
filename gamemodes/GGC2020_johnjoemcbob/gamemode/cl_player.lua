@@ -22,10 +22,10 @@ MAT_GUNS_FUTURE = Material( "guns_future.png", "nocull 1 smooth 0" )
 
 MAT_MUZZLEFLASH = Material( "muzzleflash.png", "nocull 1 smooth 0" )
 
-local PLAYER_WIDTH = 40
-local PLAYER_HEIGHT = 74
-local PLAYER_UV_WIDTH = 41
-local PLAYER_UV_HEIGHT = 74
+PLAYER_WIDTH = 40
+PLAYER_HEIGHT = 74
+PLAYER_UV_WIDTH = 41
+PLAYER_UV_HEIGHT = 74
 
 local ANIMS = {}
 ANIMS[MAT_PLAYER] = {}
@@ -81,11 +81,11 @@ function GM:PrePlayerDraw( ply )
 
 			local frames = #ANIMS[MAT_PLAYER][anim]
 			local tr = util.TraceLine( {
-				start = ply:GetPos(),
-				endpos = ply:GetPos() - Vector( 0, 0, 10000 ),
+				start = pos,
+				endpos = pos - Vector( 0, 0, 10000 ),
 				filter = ply
 			} )
-			local dist = math.floor( math.Clamp( ply:GetPos():Distance( tr.HitPos ) / 10, 0, frames - 1 ) )
+			local dist = math.floor( math.Clamp( pos:Distance( tr.HitPos ) / 10, 0, frames - 1 ) )
 			frame = dist + 1
 
 			-- Animate wobble a little at height of jump
@@ -112,7 +112,7 @@ function GM:PrePlayerDraw( ply )
 			left = angBetween < 0
 		end
 		ply.BillboardLeft = left
-	DrawPlayerWithUVs( ply, -PLAYER_WIDTH / 2, -PLAYER_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT, MAT_PLAYER, anim, frame, left )
+	DrawPlayerWithUVs( ply, MAT_PLAYER, anim, frame, left )
 
 	-- Draw weapon
 	-- TODO DOESN'T WORK, WEAPONS NEED TO REFACTOR TO DRAW THEMSELVES
@@ -241,13 +241,8 @@ function DrawWeapon( ply, x, y, scale, left, viewmodel )
 		-- ply.ViewModelPos = ply.ViewModelPos - ply:GetForward() * 5
 	end
 end
-function DrawPlayerWithUVs( ply, x, y, w, h, mat, anim, frame, left )
-	-- 17 / 643, 94 / 831, ( 17 + 68 ) / 643, ( 94 + 68 ) / 831
-	local uvs = ANIMS[mat][anim][frame]
-	local u1 = uvs.x / MAT_PLAYER_WIDTH
-	local v1 = uvs.y / MAT_PLAYER_HEIGHT
-	local u2 = ( uvs.x + PLAYER_UV_WIDTH ) / MAT_PLAYER_WIDTH
-	local v2 = ( uvs.y + PLAYER_UV_HEIGHT ) / MAT_PLAYER_HEIGHT
+function DrawPlayerWithUVs( ply, mat, anim, frame, left )
+	local u1, v1, u2, v2 = GetUVs( mat, anim, frame )
 
 	if ( !left ) then
 		local temp = u1
@@ -263,6 +258,21 @@ function DrawWithUVs( x, y, w, h, u1, v1, u2, v2, left )
 		u2 = temp
 	end
 	surface.DrawTexturedRectUV( x, y, w, h, u1, v1, u2, v2 )
+end
+
+function GetAnimation( mat, anim )
+	return ANIMS[mat][anim]
+end
+
+function GetUVs( mat, anim, frame )
+	-- 17 / 643, 94 / 831, ( 17 + 68 ) / 643, ( 94 + 68 ) / 831
+	local uvs = ANIMS[mat][anim][frame]
+	local u1 = uvs.x / MAT_PLAYER_WIDTH
+	local v1 = uvs.y / MAT_PLAYER_HEIGHT
+	local u2 = ( uvs.x + PLAYER_UV_WIDTH ) / MAT_PLAYER_WIDTH
+	local v2 = ( uvs.y + PLAYER_UV_HEIGHT ) / MAT_PLAYER_HEIGHT
+
+	return u1, v1, u2, v2
 end
 
 function Get2DGun()

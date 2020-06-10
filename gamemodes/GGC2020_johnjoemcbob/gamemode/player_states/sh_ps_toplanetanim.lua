@@ -256,7 +256,6 @@ if ( CLIENT ) then
 
     hook.Add( "PostDrawTranslucentRenderables", HOOK_PREFIX .. "ToPlanetAnim_PostDrawTranslucentRenderables", function()
         if ( LocalPlayer():GetStateName() != STATE_TO_PLANET_ANIM ) then return end
-        -- if ( true ) then return end
 
         -- Clear
         render.Clear( 0, 0, 0, 255 )
@@ -331,11 +330,12 @@ if ( CLIENT ) then
             local ang = ( ShipPos - pos ):GetNormalized():Angle()
 
             local view = {}
-            view.origin = pos
-            view.angles = ang
-            view.fov = ShipFOV
-            -- view.zfar = 1000
+                view.origin = pos
+                view.angles = ang
+                view.fov = ShipFOV
+                -- view.zfar = 1000
 
+                LocalPlayer().CalcViewAngles = Angle( ang.p, ang.y, ang.r )
             return view
         end
     end )

@@ -83,6 +83,10 @@ function ApproachVector( change, current, target )
 	)
 end
 
+function VectorIndividualMultiply( one, two )
+	return Vector( one.x * two.x, one.y * two.y, one.z * two.z )
+end
+
 function GetPrettyVector( vector )
 	return "Vector( " .. math.Round( vector.x ) .. ", " .. math.Round( vector.y ) .. ", " .. math.Round( vector.z ) .. " )"
 end
@@ -169,6 +173,31 @@ function intersect_polygons( a, b )
 		end
 	end
 	return true
+end
+
+-- http://stackoverflow.com/a/23976134/1190664
+-- ray.position is a vector
+-- ray.direction is a vector
+-- plane.position is a vector
+-- plane.normal is a vector
+function intersect_ray_plane( ray, plane )
+	local denom = plane.normal:Dot( ray.direction )
+
+	-- Ray does not intersect plane
+	if math.abs( denom ) < GAMEMODE.Epsilon then
+		return false
+	end
+
+	-- Distance of direction
+	local d = plane.position - ray.position
+	local t = d:Dot( plane.normal ) / denom
+
+	if t < GAMEMODE.Epsilon then
+		return false
+	end
+
+	-- Return collision point and distance from ray origin
+	return ray.position + ray.direction * t, t
 end
 
 -- Create a physics prop which is frozen by default
