@@ -13,9 +13,9 @@ AddCSLuaFile( "includes/modules/3d2dvgui.lua" )
 AddCSLuaFile( "cl_init.lua" )
 AddCSLuaFile( "cl_billboard.lua" )
 AddCSLuaFile( "cl_modelcache.lua" )
+AddCSLuaFile( "cl_player.lua" )
 AddCSLuaFile( "cl_shipeditor.lua" )
 AddCSLuaFile( "cl_outsiderender.lua" )
-AddCSLuaFile( "cl_planet.lua" )
 AddCSLuaFile( "cl_fakeroom.lua" )
 
 -- LUA Includes
@@ -51,6 +51,7 @@ end
 
 hook.Add( "PlayerInitialSpawn", HOOK_PREFIX .. "PlayerInitialSpawn", function( ply )
 	ply.InitialFOV = ply:GetFOV()
+	ply:SwitchState( STATE_JOINED )
 end )
 
 hook.Add( "PlayerSpawn", HOOK_PREFIX .. "PlayerSpawn", function( ply )

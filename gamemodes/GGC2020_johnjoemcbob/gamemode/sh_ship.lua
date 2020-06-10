@@ -81,6 +81,7 @@ if ( SERVER ) then
 				ply:SetPos( self.Ship[index].SpawnPoint )
 				ply:SetHealth( ply:GetMaxHealth() )
 				ply:SetNWEntity( "CurrentShip", index )
+				ply:SwitchState( STATE_FPS )
 				ply.OwnShip = index
 			end
 
@@ -155,9 +156,8 @@ if ( SERVER ) then
 	hook.Add( "Think", HOOK_PREFIX .. "Ship_Think", function()
 		for k, ply in pairs( player.GetAll() ) do
 			local ship = ply:GetNWInt( "CurrentShip", -1 )
-			if ( ship >= 0 and Ship.Ship[ship] and Ship.Ship[ship]:IsValid() and ply:InVehicle() ) then
+			if ( ship >= 0 and Ship.Ship[ship] and Ship.Ship[ship]:IsValid() and ply:GetStateName() == STATE_SHIP_PILOT ) then
 				Ship.Ship[ship]:MoveInput( ply )
-				-- print( ship )
 			end
 		end
 	end )

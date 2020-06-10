@@ -149,13 +149,13 @@ SHIPPARTS = {
 -- Includes (after globals)
 if ( SERVER ) then
 	AddCSLuaFile( "sh_util.lua" )
-	AddCSLuaFile( "sh_netvar.lua" )
 	AddCSLuaFile( "sh_worldtext.lua" )
+	AddCSLuaFile( "sh_playerstates.lua" )
 	AddCSLuaFile( "sh_ship.lua" )
 end
 include( "sh_util.lua" )
-include( "sh_netvar.lua" )
 include( "sh_worldtext.lua" )
+include( "sh_playerstates.lua" )
 include( "sh_ship.lua" )
 
 local meta = FindMetaTable( "Player" )

@@ -52,20 +52,20 @@ hook.Add( "PreDrawTranslucentRenderables", HOOK_PREFIX .. "Outside_PreDrawTransl
 		-- end
 
 		-- Render dust
-		local dist = 1000
-		local poses = {
-			Vector( 0, 1, 0 ),
-			Vector( 1, 0, 0 ),
-			Vector( 0, -1, 0 ),
-			Vector( -1, 0, 0 ),
-		}
-		for k, pos in pairs( poses ) do
-			GAMEMODE.RenderCachedModel(
-				"models/effects/splodeglass.mdl",
-				pos * dist,
-				Angle( 0, 0, 0 ),
-				Vector( 1, 1, 1 ) * 1
-			)
-		end
+		-- local dist = 1000
+		-- local poses = {
+		-- 	Vector( 0, 1, 0 ),
+		-- 	Vector( 1, 0, 0 ),
+		-- 	Vector( 0, -1, 0 ),
+		-- 	Vector( -1, 0, 0 ),
+		-- }
+		-- for k, pos in pairs( poses ) do
+		-- 	GAMEMODE.RenderCachedModel(
+		-- 		"models/effects/splodeglass.mdl",
+		-- 		pos * dist,
+		-- 		Angle( 0, 0, 0 ),
+		-- 		Vector( 1, 1, 1 ) * 1
+		-- 	)
+		-- end
 	end
 end )
