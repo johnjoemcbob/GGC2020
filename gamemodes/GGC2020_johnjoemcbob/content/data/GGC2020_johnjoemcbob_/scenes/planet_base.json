@@ -1,0 +1,187 @@
+{
+  "landing": [
+    "models/props_combine/combine_mortar01b.mdl",
+    "[0 0 0]",
+    "{0 135 0}"
+  ],
+  "refinery1": [
+    "models/props_canal/refinery_02_skybox.mdl",
+    "[232 -94 2]",
+    "{0 179 0}"
+  ],
+  "refinery2": [
+    "models/props_canal/refinery_02_skybox.mdl",
+    "[-22 -406 9]",
+    "{0 90 0}"
+  ],
+  "building1": [
+    "models/props_buildings/project_building03_skybox.mdl",
+    "[134 -125 -1]",
+    "{0 -116 0}"
+  ],
+  "building2": [
+    "models/props_buildings/project_building03_skybox.mdl",
+    "[136 -119 82]",
+    "{0 -136 0}"
+  ],
+  "refinery3": [
+    "models/props_canal/refinery_03_skybox.mdl",
+    "[51 -55 2]",
+    "{0 135 0}"
+  ],
+  "refinery3": [
+    "models/props_canal/refinery_02_skybox.mdl",
+    "[153 -278 12]",
+    "{0 135 0}"
+  ],
+  "combine1": [
+    "models/props_combine/combine_emitter01.mdl",
+    "[102 -40 30]",
+    "{90 -45 180}"
+  ],
+  "combine2": [
+    "models/combine_apc_destroyed_gib05.mdl",
+    "[183 -132 -15]",
+    "{86 -136 129}"
+  ],
+  "combine3": [
+    "models/props_combine/combinecamera001.mdl",
+    "[-27 -35 20]",
+    "{0 -2 0}"
+  ],
+  "combine4": [
+    "models/props_combine/combine_dispenser.mdl",
+    "[-2 -111 38]",
+    "{0 66 0}"
+  ],
+  "screen1": [
+    "models/props_combine/combine_smallmonitor001.mdl",
+    "[-108 -38 21]",
+    "{0 135 0}"
+  ],
+  "building3": [
+    "models/props_buildings/project_building01_skybox.mdl",
+    "[31 -242 -1]",
+    "{0 180 0}"
+  ],
+  "building4": [
+    "models/props_buildings/project_building03_skybox.mdl",
+    "[290 -87 -1]",
+    "{0 -179 0}"
+  ],
+  "refinery4": [
+    "models/props_canal/refinery_02_skybox.mdl",
+    "[-182 -68 13]",
+    "{0 0 0}"
+  ],
+  "light": [
+    "models/props_combine/breenlight.mdl",
+    "[-23 -55 95]",
+    "{0 92 0}"
+  ],
+  "grating1": [
+    "models/combine_helicopter/bomb_debris_3.mdl",
+    "[-86 -49 17]",
+    "{78 -4 -82}"
+  ],
+  "grating2": [
+    "models/combine_helicopter/bomb_debris_2.mdl",
+    "[126 -18 13]",
+    "{0 -171 -90}"
+  ],
+  "combine5": [
+    "models/props_combine/combine_mortar01a.mdl",
+    "[-69 -133 -4]",
+    "{0 45 0}"
+  ],
+  "building5": [
+    "models/props_buildings/project_building03_skybox.mdl",
+    "[-124 -235 -1]",
+    "{0 92 0}"
+  ],
+  "combine6": [
+    "models/combine_apc_destroyed_gib04.mdl",
+    "[-49 -193 88]",
+    "{16 -128 -175}"
+  ],
+  "combine6": [
+    "models/props_combine/combine_generator01.mdl",
+    "[87 -170 89]",
+    "{0 90 0}"
+  ],
+  "combine6": [
+    "models/props_combine/combinecamera001.mdl",
+    "[-30 -42 2]",
+    "{0 173 90}"
+  ],
+  "building6": [
+    "models/props_buildings/project_destroyedbuildings04_skybox.mdl",
+    "[-42 -210 2]",
+    "{0 124 0}"
+  ],
+  "building7": [
+    "models/props_buildings/project_destroyedbuildings03_skybox.mdl",
+    "[293 -88 83]",
+    "{1 -177 1}"
+  ],
+  "refinery5": [
+    "models/props_canal/refinery_05_skybox.mdl",
+    "[-72 -95 2]",
+    "{0 60 0}"
+  ],
+  "stars1": [
+    "models/effects/splodeglass.mdl",
+    "[100 -400 200]",
+    "{0 0 0}"
+  ],
+  "stars2": [
+    "models/effects/splodeglass.mdl",
+    "[-400 0 300]",
+    "{0 0 0}"
+  ],
+  "rocks1": {
+    "1": "models/perftest/rocksground01b.mdl",
+    "2": "[0 50 0]",
+    "3": "{0 90 0}",
+    "Material": "models/props_pipes/GutterMetal01a"
+  },
+  "rocks2": {
+    "1": "models/perftest/rocksground01b.mdl",
+    "2": "[-130 70 0]",
+    "3": "{0 70 0}",
+    "Scale": "[5 5 5]",
+    "Material": "models/props_pipes/GutterMetal01a"
+  },
+  "rocks3": {
+    "1": "models/perftest/rocksground01b.mdl",
+    "2": "[-130 100 0]",
+    "3": "{0 0 0}",
+    "Scale": "[15 15 15]",
+    "Material": "models/props_pipes/GutterMetal01a"
+  },
+  "rocks4": {
+    "1": "models/perftest/rocksground01b.mdl",
+    "2": "[-130 100 0]",
+    "3": "{0 0 0}",
+    "Scale": "[3 3 3]",
+    "Material": "models/props_pipes/GutterMetal01a"
+  },
+  "planet": {
+    "1": "models/props_phx/construct/metal_dome360.mdl",
+    "2": "[0 -200 -475]",
+    "3": "{0 0 0}",
+    "Material": "models/props_pipes/GutterMetal01a",
+    "Scale": "[30 30 10]",
+    "Colour": {
+      "r": 80,
+      "b": 40,
+      "a": 255,
+      "g": 40
+    }
+  },
+  "thruster": {
+	"1": "models/effects/splode.mdl",
+    "2": "[0 -200 -475]",
+    "3": "{0 0 0}"
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "radar": [
+    "models/cerus/modbridge/misc/accessories/acc_radar1.mdl",
+    "[-210 -5 52]",
+    "{46 90 90}"
+  ],
+  "engine": [
+    "models/cerus/modbridge/misc/engines/eng_sq11b.mdl",
+    "[0 -210 128]",
+    "{90 -90 180}"
+  ],
+  "billboard": {
+    "1": "models/slyfo_2/acc_billboard_spcmx.mdl",
+    "2": "[-156 -175 5]",
+    "3": "{5 57 -1}",
+    "Scale": "[0.5 0.5 0.5]"
+  },
+  "chair1": [
+    "models/smallbridge/vehicles/sbvpchair.mdl",
+    "[-179 37 -60]",
+    "{0 44 0}"
+  ],
+  "chair2": [
+    "models/smallbridge/vehicles/sbvpchair.mdl",
+    "[-161 104 -60]",
+    "{0 -60 0}"
+  ],
+  "chair3": [
+    "models/smallbridge/vehicles/sbvpchair.mdl",
+    "[182 -92 -60]",
+    "{0 130 0}"
+  ],
+  "chair4": [
+    "models/smallbridge/vehicles/sbvpchair.mdl",
+    "[184 -33 -60]",
+    "{0 -128 0}"
+  ],
+  "bar": [
+    "models/slyfo/sword_overengine.mdl",
+    "[1 -108 -43]",
+    "{0 -180 0}"
+  ],
+  "bottle1": [
+    "models/props_junk/glassbottle01a.mdl",
+    "[43 -110 -19]",
+    "{0 114 0}"
+  ],
+  "bottle2": [
+    "models/props_junk/garbage_glassbottle003a.mdl",
+    "[37 -101 -18]",
+    "{0 113 0}"
+  ],
+  "bottle3": [
+    "models/props_junk/glassjug01.mdl",
+    "[35 -108 -26]",
+    "{0 107 0}"
+  ],
+  "bar_counter": [
+    "models/props_junk/garbage_carboard002a.mdl",
+    "[-14 -107 -26]",
+    "{0 81 0}"
+  ],
+  "table1": [
+    "models/props_c17/furnituretable001a.mdl",
+    "[166 -68 -42]",
+    "{0 134 0}"
+  ],
+  "table2": [
+    "models/props_c17/furnituretable001a.mdl",
+    "[-153 66 -42]",
+    "{0 1 0}"
+  ],
+  "table3": [
+    "models/props_c17/furnituretable001a.mdl",
+    "[123 82 -42]",
+    "{0 135 0}"
+  ],
+  "table4": [
+    "models/props_c17/furnituretable001a.mdl",
+    "[-30 96 -42]",
+    "{0 45 0}"
+  ],
+  "chair5": [
+    "models/smallbridge/vehicles/sbvpchair.mdl",
+    "[-54 53 -60]",
+    "{0 59 0}"
+  ],
+  "chair6": [
+    "models/smallbridge/vehicles/sbvpchair.mdl",
+    "[1 115 -60]",
+    "{0 -138 0}"
+  ],
+  "chair7": [
+    "models/smallbridge/vehicles/sbvpchair.mdl",
+    "[102 43 -60]",
+    "{0 67 0}"
+  ],
+  "chair8": [
+    "models/smallbridge/vehicles/sbvpchair.mdl",
+    "[160 107 -60]",
+    "{0 -155 0}"
+  ],
+  "chair9": [
+    "models/smallbridge/vehicles/sbvpchair.mdl",
+    "[93 115 -60]",
+    "{0 -60 0}"
+  ]
+}

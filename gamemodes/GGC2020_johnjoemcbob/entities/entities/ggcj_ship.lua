@@ -234,6 +234,37 @@ function ENT:OnCollisionFinish( other )
 end
 
 if ( CLIENT ) then
+	function ENT:Render3D( pos, yaw, scale )
+		if ( self and self.Constructor ) then
+			for _, data in pairs( self.Constructor ) do
+				local part = SHIPPARTS[data.Name]
+				local size = SHIPPART_SIZE * scale
+				local localpos = Ship.GetPartOffset( data ) * scale
+
+				-- Didn't work with matrix for some reason?
+				local ang = Angle( 0, yaw + self:Get2DRotation(), 0 )
+				local center = Vector( -self:GetCenter().y, self:GetCenter().x ) * size
+					localpos = localpos + center
+				GAMEMODE.RenderCachedModel(
+					part[1],
+					pos +
+						--center +
+						ang:Forward() * localpos.x +
+						ang:Right() * localpos.y,
+					ang + Angle( 0, 90 * data.Rotation, 0 ),
+					Vector( 1, 1, 1 ) * scale
+				)
+			end
+
+			-- GAMEMODE.RenderCachedModel(
+			-- 	"models/props_borealis/bluebarrel001.mdl",
+			-- 	pos,
+			-- 	Angle( 0, yaw, 0 ),
+			-- 	Vector( 1, 1, 1 ) * 5
+			-- )
+		end
+	end
+
 	function ENT:HUDPaint( x, y, scale, col )
 		col = table.shallowcopy( col ) -- TODO TEMP REMOVE
 		col.a = 100 -- TODO TEMP REMOVE
@@ -244,10 +275,7 @@ if ( CLIENT ) then
 				-- Translate this ship
 				mat:Translate( Vector( x, y ) )
 				mat:Rotate( Angle( 0, self:Get2DRotation(), 0 ) )
-				mat:Translate( Vector(
-					-( ( self.Size.x / 2 + self.Min.x ) * cellsize ),
-					-( ( self.Size.y / 2 + self.Min.y ) * cellsize )
-				) )
+				mat:Translate( -self:GetCenter() * cellsize )
 			cam.PushModelMatrix( mat )
 				local index = 0
 				for k, part in pairs( self.Constructor ) do
@@ -286,6 +314,13 @@ function ENT:GetPosFrom2D()
 		pos.x = -pos.x
 		pos.z = self:GetMapPos().z
 	return pos
+end
+
+function ENT:GetCenter()
+	return Vector(
+		self.Size.x / 2 + self.Min.x,
+		self.Size.y / 2 + self.Min.y
+	)
 end
 
 function ENT:GetMapPos()

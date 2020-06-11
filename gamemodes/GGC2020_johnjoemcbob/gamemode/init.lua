@@ -16,7 +16,7 @@ AddCSLuaFile( "cl_modelcache.lua" )
 AddCSLuaFile( "cl_player.lua" )
 AddCSLuaFile( "cl_shipeditor.lua" )
 AddCSLuaFile( "cl_outsiderender.lua" )
-AddCSLuaFile( "cl_fakeroom.lua" )
+AddCSLuaFile( "cl_scene.lua" )
 
 -- LUA Includes
 include( "shared.lua" )

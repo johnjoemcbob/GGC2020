@@ -14,7 +14,7 @@ include( "cl_modelcache.lua" )
 include( "cl_player.lua" )
 include( "cl_shipeditor.lua" )
 include( "cl_outsiderender.lua" )
-include( "cl_fakeroom.lua" )
+include( "cl_scene.lua" )
 
 ------------------------
   -- Gamemode Hooks --
