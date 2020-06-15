@@ -16,19 +16,7 @@ RESERVED_PLAYER = "reserved_player"
 
 -- Load json format from data files and parse to table
 function LoadScene( name )
-	local zone = "DATA"
-	local path = PATH .. name .. ".json"
-	if ( !file.Exists( path, zone ) ) then
-		path = GAMEMODE.GamemodePath .. "content/data/" .. path
-		zone = "GAME"
-		if ( !file.Exists( path, zone ) ) then
-			return
-		end
-	end
-
-	local json = file.Read( path, zone )
-	local tab = util.JSONToTable( json )
-	return tab
+	return LoadTableFromJSON( PATH, name )
 end
 
 -- Temp for old existing hardcoded scenes
@@ -108,19 +96,7 @@ end
 -- Load animation
 local PATH = HOOK_PREFIX .. "/animations/"
 function LoadAnimation( name )
-	local zone = "DATA"
-	local path = PATH .. name .. ".json"
-	if ( !file.Exists( path, zone ) ) then
-		path = GAMEMODE.GamemodePath .. "content/data/" .. path
-		zone = "GAME"
-		if ( !file.Exists( path, zone ) ) then
-			return
-		end
-	end
-
-	local json = file.Read( path, zone )
-	local tab = util.JSONToTable( json )
-	return tab
+	return LoadTableFromJSON( PATH, name )
 end
 -- Temp for old existing hardcoded scenes
 function SaveAnimation( name, tab )
@@ -149,6 +125,7 @@ hook.Add( "Think", HOOK_PREFIX .. "Animations_Think", function()
 	local anim = LocalPlayer().CurrentAnimation
 	if ( anim ) then
 		local overallprogress = ( CurTime() - anim.StartTime ) / anim.Data.Duration
+		anim.CurrentProgress = overallprogress
 
 		-- Test skipping input
 		if ( input.IsButtonDown( KEY_SPACE ) ) then

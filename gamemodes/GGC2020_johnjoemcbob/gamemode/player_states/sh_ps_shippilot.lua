@@ -17,9 +17,9 @@ GM.AddPlayerState( STATE_SHIP_PILOT, {
 				ply:SwitchState( STATE_FPS )
 			end
 
-			if ( ply:KeyDown( IN_WALK ) ) then
-				ply:SwitchState( STATE_TO_PLANET_ANIM )
-			end
+			-- if ( ply:KeyDown( IN_WALK ) ) then
+			-- 	ply:SwitchState( STATE_TO_PLANET_ANIM )
+			-- end
 		end
 	end,
 	OnFinish = function( self, ply )
@@ -28,6 +28,12 @@ GM.AddPlayerState( STATE_SHIP_PILOT, {
 })
 
 if ( CLIENT ) then
+	hook.Add( "PreDrawOpaqueRenderables", HOOK_PREFIX .. "ShipPilot_PreDrawOpaqueRenderables", function()
+		if ( LocalPlayer():GetStateName() == STATE_SHIP_PILOT ) then
+			render.Clear( 0, 0, 0, 255 )
+			render.ClearDepth()
+		end
+	end )
 	hook.Add( "CalcView", HOOK_PREFIX .. "ShipPilot_CalcView", function( ply, pos, ang, fov )
 		if ( LocalPlayer():GetStateName() == STATE_SHIP_PILOT ) then
 			local view = {}

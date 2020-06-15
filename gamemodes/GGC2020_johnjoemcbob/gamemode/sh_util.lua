@@ -5,31 +5,67 @@
 -- Shared Util
 --
 
+function ForAllDataFilesInDir( localdir, onfound )
+	local srchpath = localdir .. "*"
+	local searches = {
+		{ srchpath, "DATA" },
+		{ gmod.GetGamemode().GamemodePath .. "content/data/" .. srchpath, "GAME" },
+	}
+	for k, search in pairs( searches ) do
+		local files, directories = file.Find( search[1], search[2] )
+		for k, file in pairs( files ) do
+			onfound( file )
+		end
+		for k, dir in pairs( directories ) do
+			ForAllDataFilesInDir( localdir .. dir .. "/", onfound )
+		end
+	end
+end
+
+function LoadTableFromJSON( path, name )
+	local zone = "DATA"
+	local path = path .. name
+		if ( !string.find( path, ".json" ) ) then
+			path = path .. ".json"
+		end
+	if ( !file.Exists( path, zone ) ) then
+		path = gmod.GetGamemode().GamemodePath .. "content/data/" .. path
+		zone = "GAME"
+		if ( !file.Exists( path, zone ) ) then
+			return
+		end
+	end
+
+	local json = file.Read( path, zone )
+	local tab = util.JSONToTable( json )
+	return tab
+end
+
 function tablelength(T)
-  local count = 0
-  for _ in pairs(T) do count = count + 1 end
-  return count
+	local count = 0
+	for _ in pairs(T) do count = count + 1 end
+	return count
 end
 
 -- Make a shallow copy of a table (from http://lua-users.org/wiki/CopyTable)
 -- Extended for recursive tables
 function table.shallowcopy( orig )
-    local orig_type = type( orig )
-    local copy
-    if ( orig_type == "table" ) then
-        copy = {}
-        for orig_key, orig_value in pairs( orig ) do
+	local orig_type = type( orig )
+	local copy
+	if ( orig_type == "table" ) then
+		copy = {}
+		for orig_key, orig_value in pairs( orig ) do
 			if ( type( orig_value ) == "table" ) then
 				copy[orig_key] = table.shallowcopy( orig_value )
 			else
 				copy[orig_key] = orig_value
 			end
-        end
+		end
 	-- Number, string, boolean, etc
-    else
-        copy = orig
-    end
-    return copy
+	else
+		copy = orig
+	end
+	return copy
 end
 
 function UnNaNVector( vector, default )
@@ -96,11 +132,11 @@ function GetPrettyAngle( angle )
 end
 
 function rotate_point( pointX, pointY, originX, originY, angle )
-    angle = angle * math.pi / 180
-    return {
+	angle = angle * math.pi / 180
+	return {
 		math.cos(angle) * (pointX-originX) - math.sin(angle) * (pointY-originY) + originX,
 		math.sin(angle) * (pointX-originX) + math.cos(angle) * (pointY-originY) + originY
-    }
+	}
 end
 
 function getpolygonfromsquare( x, y, w, h, ang )
@@ -242,6 +278,16 @@ function intersect_point_rotated_rect( point, rect, angle )
 	return point_on_square( point, points )
 end
 
+-- From: http://wiki.garrysmod.com/page/surface/DrawPoly
+function GM.GetCirclePoints( x, y, radius, seg, rotate )
+	local cir = {}
+		for i = 0, seg do
+			local a = math.rad( ( ( i / seg ) * -360 ) + rotate )
+			table.insert( cir, { x = x + math.sin( a ) * radius, y = y + math.cos( a ) * radius, u = math.sin( a ) / 2 + 0.5, v = math.cos( a ) / 2 + 0.5 } )
+		end
+	return cir
+end
+
 -- Create a physics prop which is frozen by default
 -- Model (String), Position (Vector), Angle (Angle), Should Move? (bool)
 function GM.CreateProp( mod, pos, ang, mov )
@@ -278,4 +324,16 @@ function GM.CreateEnt( class, mod, pos, ang, mov, nospawn )
 			end
 		end
 	return ent
+end
+
+local meta = FindMetaTable( "Player" )
+function meta:GetIndex()
+	local index = 1
+		for k, v in pairs( player.GetAll() ) do
+			if ( v == self ) then
+				break
+			end
+			index = index + 1
+		end
+	return index
 end

@@ -14,12 +14,16 @@ AddCSLuaFile( "cl_init.lua" )
 AddCSLuaFile( "cl_billboard.lua" )
 AddCSLuaFile( "cl_modelcache.lua" )
 AddCSLuaFile( "cl_player.lua" )
+AddCSLuaFile( "cl_moduleeditor.lua" )
 AddCSLuaFile( "cl_shipeditor.lua" )
 AddCSLuaFile( "cl_outsiderender.lua" )
 AddCSLuaFile( "cl_scene.lua" )
+AddCSLuaFile( "cl_2dmap.lua" )
 
 -- LUA Includes
 include( "shared.lua" )
+
+include( "sv_2dmap.lua" )
 
 -- Resources
 resource.AddFile( "materials/playersheet.png" )
@@ -61,9 +65,15 @@ hook.Add( "PlayerSpawn", HOOK_PREFIX .. "PlayerSpawn", function( ply )
 		-- ply:SetBloodColor( BLOOD_COLOR_MECH )
 		ply:SetBloodColor( BLOOD_COLOR_ANTLION_WORKER )
 
-		ply:StripWeapons()
-		ply:Give( "ggcj_weapon_base" )
+		if ( !DEBUG_NOSTRIP ) then
+			ply:StripWeapons()
+		end
 		ply:GiveAmmo( 2000, "Pistol" )
+		ply:Give( "ggcj_weapon_pistol" )
+		ply:Give( "ggcj_weapon_shotgun" )
+		ply:Give( "ggcj_weapon_machinegun" )
+		ply:Give( "ggcj_weapon_laser" )
+		ply:Give( "ggcj_weapon_rocketlauncher" )
 
 		local ship = ply:GetNWInt( "CurrentShip", -1 )
 		if ( ship >= 0 ) then

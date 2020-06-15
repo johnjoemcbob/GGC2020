@@ -15,14 +15,15 @@ function ENT:SetupDataTables()
 	self:NetworkVar( "Vector", 0, "2DPos" )
 	self:NetworkVar( "Vector", 1, "2DVelocity" )
 	self:NetworkVar( "Float", 0, "2DRotation" )
-	-- self:NetworkVar( "Float", 1, "2DSpeed" )
 	self:NetworkVar( "Int", 0, "Index" )
+	self:NetworkVar( "String", 0, "CurrentZone" )
 
 	-- self:SetIndex( -1 )
 	local range = 20
 	self:Set2DPos( Vector( math.random( -range, range ), math.random( -range, range ) ) )
 	self:Set2DVelocity( Vector( 0, 0 ) )
 	self:Set2DRotation( 0 )
+	self:SetCurrentZone( "ERROR" )
 	-- self:Set2DSpeed( 0 )
 end
 
@@ -44,7 +45,7 @@ function ENT:Initialize()
 	self.SideSpeedMult = 0.02
 	self.Acceleration = 100 * self.Multiplier
 	self.RotateAcceleration = 10 * self.Multiplier
-	self.Decceleration = 100 * self.Multiplier
+	self.Decceleration = 1000 * self.Multiplier
 	self.MaxSpeed = 100 * self.Multiplier
 	self.MaxRotateSpeed = 0.5 * self.Multiplier
 	self.MaxVelocity = 100 * self.Multiplier
@@ -176,17 +177,19 @@ end
 function ENT:OnCollisionStart( other )
 	-- Temp measure to only board in one direction
 	-- if ( self:GetIndex() > other ) then
-	if ( false ) then
+	if ( DEBUG_BOARDING ) then
 		-- Board!!
-		for k, ply in pairs( player.GetAll() ) do
-			if ( ply:GetNWInt( "CurrentShip" ) == self:GetIndex() ) then
-				if ( ply:InVehicle() ) then
-					ply:ExitVehicle()
+		timer.Simple( 0.5, function()
+			for k, ply in pairs( player.GetAll() ) do
+				if ( ply:GetNWInt( "CurrentShip" ) == self:GetIndex() ) then
+					if ( ply:InVehicle() ) then
+						ply:ExitVehicle()
+					end
+					ply:SetPos( Ship.Ship[other].SpawnPoint )
+					PrintMessage( HUD_PRINTCENTER, "NOW BOARDING" )
 				end
-				ply:SetPos( Ship.Ship[other].SpawnPoint )
-				PrintMessage( HUD_PRINTCENTER, "NOW BOARDING" )
 			end
-		end
+		end )
 
 		-- Spawn enemies
 		for _, pos in pairs( Ship.Ship[other].EnemySpawners ) do

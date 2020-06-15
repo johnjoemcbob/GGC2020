@@ -75,13 +75,16 @@ if ( CLIENT ) then
 		RenderScene( PLANET_MODELS, Vector( -342, 407, 348 ) )
 
 		-- Render other shuttles
-		for k, shuttle in pairs( SHUTTLES ) do
-			GAMEMODE.RenderCachedModel(
-				shuttle.Model,
-				shuttle.Start,--LerpVector( progress * shuttle.Speed, shuttle.Start, shuttle.Target ),
-				shuttle.Angle,
-				Vector( 1, 1, 1 ) * shuttle.Scale
-			)
+		if ( LocalPlayer().CurrentAnimation ) then
+			local progress = LocalPlayer().CurrentAnimation.CurrentProgress or 1
+			for k, shuttle in pairs( SHUTTLES ) do
+				GAMEMODE.RenderCachedModel(
+					shuttle.Model,
+					LerpVector( progress * shuttle.Speed, shuttle.Start, shuttle.Target ),
+					shuttle.Angle,
+					Vector( 1, 1, 1 ) * shuttle.Scale
+				)
+			end
 		end
 
 		-- Render ship

@@ -18,7 +18,7 @@ local CameraFOV = 50
 local PlayerSize = 80
 local PlayerPos = Vector( 0, 0, 0 )
 local TargetPos = Vector( 0, 0, 0 )
-local Speed = 50
+local Speed = 100
 local LastLeft = true
 local IntroSpeed = 0.2
 
@@ -91,12 +91,12 @@ if ( CLIENT ) then
 		return lastvalid
 	end
 
-	hook.Add( "PostDrawTranslucentRenderables", HOOK_PREFIX .. "Planet_PostDrawTranslucentRenderables", function()
+	hook.Add( "PreDrawEffects", HOOK_PREFIX .. "Planet_PreDrawEffects", function()
 		if ( LocalPlayer():GetStateName() != STATE_PLANET ) then return end
 
 		-- Clear
-		--render.Clear( 0, 0, 0, 255 )
-		--render.ClearDepth()
+		render.Clear( 0, 0, 0, 255 )
+		render.ClearDepth()
 
 		-- Render Room
 		GAMEMODE.RenderCachedModel(
@@ -170,10 +170,12 @@ if ( CLIENT ) then
 			end
 
 			-- Exit zone
-			local dist = PlayerPos:Distance( Vector( -424, 653, 295 ) )
-			--print( GetPrettyVector( PlayerPos ) )
-			if ( dist < 15 ) then
-				LocalPlayer():SwitchState( STATE_FROM_PLANET_ANIM )
+			if ( PlayerPos == TargetPos ) then
+				local dist = TargetPos:Distance( Vector( -424, 653, 295 ) )
+				--print( GetPrettyVector( PlayerPos ) )
+				if ( dist < 15 ) then
+					LocalPlayer():SwitchState( STATE_FROM_PLANET_ANIM )
+				end
 			end
 		elseif ( ROOM_PROPS[RESERVED_PLAYER] ) then
 			TargetPos = ROOM_PROPS[RESERVED_PLAYER][2]
@@ -226,7 +228,7 @@ if ( CLIENT ) then
 			return GetSceneCalcView( ROOM_PROPS, ply, pos, ang, CameraFOV )
 		end
 	end )
-	
+
 	hook.Add( "HUDPaint", HOOK_PREFIX .. "Planet_HUDPaint", function()
 		if ( LocalPlayer():GetStateName() == STATE_PLANET ) then
 			--draw.RoundedBox( 0, testpos.x, testpos.y, 1, 1, COLOUR_WHITE )

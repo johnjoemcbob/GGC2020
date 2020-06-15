@@ -86,28 +86,30 @@ if ( SERVER ) then
 			end
 
 			-- Test doors
-			if ( v.Collisions.x == 1 and v.Collisions.y == 1 ) then
-				local doors = {
-					{ Vector( 1, 0, 0 ),	Angle( 0, 0, 0 ) },
-					{ Vector( -1, 0, 0 ),	Angle( 0, 0, 0 ) },
-					{ Vector( 0, 1, 0 ),	Angle( 0, 90, 0 ) },
-					{ Vector( 0, -1, 0 ),	Angle( 0, 90, 0 ) },
-				}
-				for k, doordata in pairs( doors ) do
-					local pos = ent:GetPos() + doordata[1] * SHIPPART_SIZE / 2
-					local tr = util.TraceLine( {
-						start = ent:GetPos(),
-						endpos = ent:GetPos() + doordata[1] * SHIPPART_SIZE / 2 * 1.5,
-					} )
-					if ( !tr.Hit ) then
-						if ( math.random( 1, 5 ) == 1 ) then
-							local door = ents.Create( "ggcj_door" )
-								door:SetPos( pos + doordata[2]:Forward() * 0.1 )
-								door:SetAngles( doordata[2] )
-								door:SetColor( COLOUR_UNLIT )
-								door:Spawn()
-								table.insert( self.Ship[index].Parts, door.OuterFrame )
-							table.insert( self.Ship[index].Parts, door )
+			if ( DEBUG_DOORS ) then
+				if ( v.Collisions.x == 1 and v.Collisions.y == 1 ) then
+					local doors = {
+						{ Vector( 1, 0, 0 ),	Angle( 0, 0, 0 ) },
+						{ Vector( -1, 0, 0 ),	Angle( 0, 0, 0 ) },
+						{ Vector( 0, 1, 0 ),	Angle( 0, 90, 0 ) },
+						{ Vector( 0, -1, 0 ),	Angle( 0, 90, 0 ) },
+					}
+					for k, doordata in pairs( doors ) do
+						local pos = ent:GetPos() + doordata[1] * SHIPPART_SIZE / 2
+						local tr = util.TraceLine( {
+							start = ent:GetPos(),
+							endpos = ent:GetPos() + doordata[1] * SHIPPART_SIZE / 2 * 1.5,
+						} )
+						if ( !tr.Hit ) then
+							if ( math.random( 1, 5 ) == 1 ) then
+								local door = ents.Create( "ggcj_door" )
+									door:SetPos( pos + doordata[2]:Forward() * 0.1 )
+									door:SetAngles( doordata[2] )
+									door:SetColor( COLOUR_UNLIT )
+									door:Spawn()
+									table.insert( self.Ship[index].Parts, door.OuterFrame )
+								table.insert( self.Ship[index].Parts, door )
+							end
 						end
 					end
 				end
@@ -129,6 +131,9 @@ if ( SERVER ) then
 			false
 		)
 		ent:SetKeyValue( "vehiclescript", "scripts/vehicles/prisoner_pod.txt" )
+
+		-- TODO TEMP, find actual system name
+		Map2D:SetEntityZone( self.Ship[index], ZONE_TYPE_SYSTEM, "test.json" )
 	end
 
 	Ship.Clear = function( self, ply )
@@ -169,9 +174,8 @@ if ( SERVER ) then
 
 	concommand.Add( "ggcj_loadships", function( ply, cmd, args )
 		local ships = {
-			"shipbig.txt",
-			"shipsmall.txt",
-			"shiptiny.txt",
+			"old/shipsmall.txt",
+			"old/shiptiny.txt",
 		}
 		for k, ship in pairs( ships ) do
 			local json = file.Read( HOOK_PREFIX .. "/" .. ship )
@@ -189,84 +193,93 @@ if ( CLIENT ) then
 	sampleFrame:SetSize( 200, 200 )
 	sampleFrame:ParentToHUD()
 	sampleFrame.Paint = function( self, w, h )
-		-- local w = ScrW() / 4
-		-- local h = w
-		local x = 0
-		local x = ScrW() - w
-		local y = 0
+		-- -- local w = ScrW() / 4
+		-- -- local h = w
+		-- local x = 0
+		-- local x = ScrW() - w
+		-- local y = 0
 
-		-- Background
-		local function mask()
-			surface.SetDrawColor( COLOUR_BLACK )
-			surface.DrawRect( x, y, w, h )
-		end
-		local function inner()
-			-- Draw world centered on own ship
-			local ship = LocalPlayer():GetNWInt( "CurrentShip" )
-			-- print( ship )
-			if ( ship and ship >= 0 ) then
-				local ship = Ship.Ship[ship]
-				if ( ship and ship:IsValid() ) then
-					local sw = SHIPPART_SIZE_2D
-					local sh = sw
-					local sx = x + w / 2 -- sw
-					local sy = y + h / 2 -- sh
+		-- -- Background
+		-- local function mask()
+		-- 	surface.SetDrawColor( COLOUR_BLACK )
+		-- 	surface.DrawRect( x, y, w, h )
+		-- end
+		-- local function inner()
+		-- 	-- Draw world centered on own ship
+		-- 	local ship = LocalPlayer():GetNWInt( "CurrentShip" )
+		-- 	-- print( ship )
+		-- 	if ( ship and ship >= 0 ) then
+		-- 		local ship = Ship.Ship[ship]
+		-- 		if ( ship and ship:IsValid() ) then
+		-- 			local sw = SHIPPART_SIZE_2D
+		-- 			local sh = sw
+		-- 			local sx = x + w / 2 -- sw
+		-- 			local sy = y + h / 2 -- sh
 
-					-- Draw grid for telling movement is happening
-					surface.SetDrawColor( Color( 255, 255, 255, 5 ) )
-					local cells = w / sw
-					for cx = 1, cells do
-						local cx = x + cx * sw - ship:Get2DPos().x % sw
-						local cy = y
-						surface.DrawLine( cx, cy, cx, cy + h )
-					end
-					for cy = 1, cells do
-						local cx = x
-						local cy = y + cy * sh - ship:Get2DPos().y % sw
-						surface.DrawLine( cx, cy, cx + w, cy )
-					end
+		-- 			-- Draw grid for telling movement is happening
+		-- 			surface.SetDrawColor( Color( 255, 255, 255, 5 ) )
+		-- 			local cells = w / sw
+		-- 			for cx = 1, cells do
+		-- 				local cx = x + cx * sw - ship:Get2DPos().x % sw
+		-- 				local cy = y
+		-- 				surface.DrawLine( cx, cy, cx, cy + h )
+		-- 			end
+		-- 			for cy = 1, cells do
+		-- 				local cx = x
+		-- 				local cy = y + cy * sh - ship:Get2DPos().y % sw
+		-- 				surface.DrawLine( cx, cy, cx + w, cy )
+		-- 			end
 
-					-- Debug lines
-						local mult = 0.1
-						surface.SetDrawColor( COLOUR_WHITE )
-						surface.DrawLine( sx, sy, sx + ship:Get2DVelocity().x * mult, sy + ship:Get2DVelocity().y * mult )
+		-- 			-- Draw 2d map!
+		-- 			local mat = cam.GetModelMatrix()
+		-- 				mat:Translate( Vector( sx, sy ) )
+		-- 				mat:Translate( -Vector( ship:Get2DPos().x, ship:Get2DPos().y ) )
+		-- 				--mat:Rotate( Angle( 0, -ship:Get2DRotation(), 0 ) )
+		-- 			cam.PushModelMatrix( mat )
+		-- 				Map2D:Render( 0, 0, MAP2D_TO_SHIP_SCALE )
+		-- 			cam.PopModelMatrix()
 
-						-- surface.SetDrawColor( Color( 255, 0, 0, 255 ) )
-						-- surface.DrawLine( sx, sy, sx + ship:Forward().x * 100, sy + ship:Forward().y * 100 )
+		-- 			-- Debug lines
+		-- 				local mult = 0.1
+		-- 				surface.SetDrawColor( COLOUR_WHITE )
+		-- 				surface.DrawLine( sx, sy, sx + ship:Get2DVelocity().x * mult, sy + ship:Get2DVelocity().y * mult )
 
-					-- Player ship
-					local col = COLOUR_GLASS
-						DEBUG_SHIP_COLLISION_POS = Vector( x + w / 2, y + h / 2 )
-						-- local collide = ( tablelength( Ship:CheckCollision( ship ) ) > 0 )
-						-- if ( collide ) then
-							-- col = Color( 255, 0, 100, 255 )
-						-- end
-					ship.Pos = self.Pos
-					ship:HUDPaint( sx, sy, sw, col )
+		-- 				-- surface.SetDrawColor( Color( 255, 0, 0, 255 ) )
+		-- 				-- surface.DrawLine( sx, sy, sx + ship:Forward().x * 100, sy + ship:Forward().y * 100 )
 
-					-- Draw system objects
-					-- TODO
-					--for k, ent in pairs( things ) do
-						-- yeah
-					--end
+		-- 			-- Player ship
+		-- 			local col = COLOUR_GLASS
+		-- 				DEBUG_SHIP_COLLISION_POS = Vector( x + w / 2, y + h / 2 )
+		-- 				-- local collide = ( tablelength( Ship:CheckCollision( ship ) ) > 0 )
+		-- 				-- if ( collide ) then
+		-- 					-- col = Color( 255, 0, 100, 255 )
+		-- 				-- end
+		-- 			ship.Pos = self.Pos
+		-- 			ship:HUDPaint( sx, sy, sw, col )
 
-					-- Draw all other ships based on this position
-					local ox, oy = sx, sy
-					for k, other in pairs( Ship.Ship ) do
-						if ( other != ship ) then
-							local sx = sx + ( other:Get2DPos().x - ship:Get2DPos().x )
-							local sy = sy + ( other:Get2DPos().y - ship:Get2DPos().y )
-							other.Pos = self.Pos
-							other:HUDPaint( sx, sy, sw, COLOUR_WHITE )
+		-- 			-- Draw system objects
+		-- 			-- TODO
+		-- 			--for k, ent in pairs( things ) do
+		-- 				-- yeah
+		-- 			--end
+
+		-- 			-- Draw all other ships based on this position
+		-- 			local ox, oy = sx, sy
+		-- 			for k, other in pairs( Ship.Ship ) do
+		-- 				if ( other != ship ) then
+		-- 					local sx = sx + ( other:Get2DPos().x - ship:Get2DPos().x )
+		-- 					local sy = sy + ( other:Get2DPos().y - ship:Get2DPos().y )
+		-- 					other.Pos = self.Pos
+		-- 					other:HUDPaint( sx, sy, sw, COLOUR_WHITE )
 						
-							surface.SetDrawColor( Color( 255, 255, 0, 10 ) )
-							surface.DrawLine( ox, oy, sx, sy )
-						end
-					end
-				end
-			end
-		end
-		draw.StencilBasic( mask, inner )
+		-- 					surface.SetDrawColor( Color( 255, 255, 0, 10 ) )
+		-- 					surface.DrawLine( ox, oy, sx, sy )
+		-- 				end
+		-- 			end
+		-- 		end
+		-- 	end
+		-- end
+		-- --draw.StencilBasic( mask, inner )
 		-- inner()
 	end
 
@@ -279,20 +292,20 @@ if ( CLIENT ) then
 				local pos = ship:GetMapPos()
 
 				sampleFrame.Pos = pos
-				
-				cam.Start3D2D( pos, Angle( 0, 0, 90 ), 0.4 )
-					sampleFrame:Paint( 200, 200 )
-				cam.End3D2D()
-				--vgui.Start3D2D( pos, Angle( 0, 0, 90 ), 0.4 )
-				--	sampleFrame:Paint3D2D()
-				--vgui.End3D2D()
+
+				-- cam.Start3D2D( pos, Angle( 0, 0, 90 ), 0.4 )
+				-- 	sampleFrame:Paint( 200, 200 )
+				-- cam.End3D2D()
+				-- --vgui.Start3D2D( pos, Angle( 0, 0, 90 ), 0.4 )
+				-- --	sampleFrame:Paint3D2D()
+				-- --vgui.End3D2D()
 			end
 		end
 	end )
 
 	hook.Add( "HUDPaint", HOOK_PREFIX .. "ShipMap_HUDPaint", function()
-		sampleFrame.Pos = Vector( 0, 0, 0 )
-		sampleFrame:Paint( ScrW() / 6, ScrW() / 6 )
+		-- sampleFrame.Pos = Vector( 0, 0, 0 )
+		-- sampleFrame:Paint( ScrW() / 6, ScrW() / 6 )
 	end )
 end
 

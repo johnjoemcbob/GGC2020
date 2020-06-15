@@ -13,15 +13,6 @@ MAT_PLAYER = Material( "playersheet.png", "nocull 1 smooth 0" )
 	-- MAT_PLAYER:SetInt( "$flags", 2 ^ 3 )
 	-- MAT_PLAYER:SetInt( "$flags", bit.bor( MAT_PLAYER:GetInt( "$flags" ), 2 ^ 8 ) )
 
-MAT_GUNS_FUTURE = Material( "guns_future.png", "nocull 1 smooth 0" )
-	-- MAT_GUNS_FUTURE:SetInt( "$flags", bit.bor( MAT_GUNS_FUTURE:GetInt( "$flags" ), 2 ^ 8 ) )
-
-	local MAT_GUNS_FUTURE_WIDTH = 1024
-	local MAT_GUNS_FUTURE_HEIGHT = 1024
-	local GUNSCALE = 0.3
-
-MAT_MUZZLEFLASH = Material( "muzzleflash.png", "nocull 1 smooth 0" )
-
 PLAYER_WIDTH = 40
 PLAYER_HEIGHT = 74
 PLAYER_UV_WIDTH = 41
@@ -61,7 +52,7 @@ ANIMS[MAT_PLAYER]["jump"] = {
 }
 
 VIEWMODEL_LERP_VECTOR	= 45
-VIEWMODEL_LERP_ANGLE	= 25
+VIEWMODEL_LERP_ANGLE	= 5
 VIEWMODEl_BREATHE		= 1
 VIEWMODEl_BREATHE_SPEED	= 1
 
@@ -119,16 +110,24 @@ function GM:PrePlayerDraw( ply )
 	-- TODO DOESN'T WORK, WEAPONS NEED TO REFACTOR TO DRAW THEMSELVES
 	-- TODO DOESN'T WORK, WEAPONS NEED TO REFACTOR TO DRAW THEMSELVES
 	local reloading = false
-		if ( ply:GetActiveWeapon() and ply:GetActiveWeapon():IsValid() ) then
-			reloading = ( ply:GetActiveWeapon():GetActivity() == ACT_RELOAD ) or ( ply:GetActiveWeapon():GetActivity() == ACT_VM_RELOAD )
-			-- print( ply:GetActiveWeapon():GetActivity() )
-		end
-		if ( reloading ) then
-			ply.ReloadingProgress = ply.ReloadingProgress + FrameTime()
-			ang:RotateAroundAxis( ang:Right(), ply.ReloadingProgress )
-			-- print( ply.ReloadingProgress )
-		else
-			ply.ReloadingProgress = 0
+		local weapon = ply:GetActiveWeapon()
+		if ( weapon and weapon:IsValid() and weapon.ReloadDuration ) then
+			local reloading = false
+			local reloadtime = weapon:GetNWFloat( "ReloadTime", 0 )
+			local reloadduration = weapon.ReloadDuration
+			if ( reloadtime ) then
+				reloading = reloadtime > CurTime()
+			end
+			if ( reloading ) then
+				local progress = ( reloadtime - CurTime() ) / reloadduration
+				ply.ReloadingProgress = -progress * 360
+
+				if ( ply.ReloadingProgress < 360 ) then
+					ang:RotateAroundAxis( ang:Up(), ply.ReloadingProgress )
+				end
+			else
+				ply.ReloadingProgress = 0
+			end
 		end
 	-- cam.Start3D2D( pos, ang, 1 )
 		local x = -PLAYER_WIDTH / 2
@@ -156,38 +155,89 @@ function GM:PreDrawViewModel( viewmodel, ply, weapon )
 		ang:RotateAroundAxis( ang:Up(), 180 + 5 )
 		ang:RotateAroundAxis( ang:Forward(), 90 )
 	-- Reloading
-	local reloading = false
-	local reloadtime = 1.3
-		if ( ply.Reloading ) then
-			reloading = ( ply.Reloading + reloadtime ) > CurTime()
-		end
-		if ( reloading ) then
-			ply.ReloadingProgress = -( ( ( ply.Reloading + reloadtime ) - CurTime() ) / reloadtime ) * 360
-
-			if ( ply.ReloadingProgress < 360 ) then
-				pos = pos + ang:Forward() * -30
-				ang:RotateAroundAxis( ang:Up(), ply.ReloadingProgress )
+		if ( weapon and weapon:IsValid() and weapon.ReloadDuration ) then
+			local reloading = false
+			local reloadtime = weapon:GetNWFloat( "ReloadTime", 0 )
+			local reloadduration = weapon.ReloadDuration
+			if ( reloadtime ) then
+				reloading = reloadtime > CurTime()
 			end
-		else
-			ply.ReloadingProgress = 0
+			if ( reloading ) then
+				local progress = ( reloadtime - CurTime() ) / reloadduration
+				ply.ReloadingProgress = -progress * 360
+
+				if ( ply.ReloadingProgress < 360 ) then
+					pos = pos + ang:Forward() * -30
+					ang:RotateAroundAxis( ang:Up(), ply.ReloadingProgress )
+				end
+			else
+				ply.ReloadingProgress = 0
+			end
 		end
 	ply.ViewModelPos = LerpVector( ft * VIEWMODEL_LERP_VECTOR, UnNaNVector( ply.ViewModelPos, pos ), pos )
 	ply.ViewModelAngles = LerpAngle( ft * VIEWMODEL_LERP_ANGLE, UnNaNAngle( ply.ViewModelAngles ), ang )
 
 	-- Draw
+	if ( weapon.DrawViewModelCustom ) then
+		weapon:DrawViewModelCustom( viewmodel, ply )
+	end
+	local scale = 1
+		if ( weapon.Sprite ) then
+			scale = weapon.Sprite.Scale
+		end
+	if ( weapon and weapon:IsValid() and weapon.Crosshair ) then
+		local ang = ply:EyeAngles()
+			ang:RotateAroundAxis( ang:Right(), 90 )
+			ang:RotateAroundAxis( ang:Up(), -90 )
+		local pos = ply:EyePos() + ply:EyeAngles():Forward() * 10
+		cam.Start3D2D( pos, ang, 0.01 )
+			draw.NoTexture()
+			weapon:Crosshair( 0, 0 )
+		cam.End3D2D()
+	end
 	cam.Start3D2D( ply.ViewModelPos, ply.ViewModelAngles, 1 )
 		DrawWeapon( ply, -60, 0, scale, true, true )
 	cam.End3D2D()
 
 	return true
 end
+
+hook.Add( "HUDPaint", HOOK_PREFIX .. "Player_Crosshair_HUDPaint", function()
+	-- local weapon = LocalPlayer():GetActiveWeapon()
+	-- if ( weapon and weapon:IsValid() and weapon.Crosshair ) then
+	-- 	weapon:Crosshair( ScrW() / 2, ScrH() / 2 )
+	-- end
+end )
 -------------------------
   -- /Gamemode Hooks --
 -------------------------
 
 -- UV anims
 function DrawWeapon( ply, x, y, scale, left, viewmodel )
+	local weapon = ply:GetActiveWeapon()
+	if ( !weapon or !weapon:IsValid() ) then return end
+
+	local offset_view = Vector( 0, 0 )
+	local offset_world = Vector( 0, 0 )
+	local mat = MAT_GUNS_FUTURE
 	local gun = Get2DGun()
+		if ( weapon.GetSprite ) then
+			local data = weapon:GetSprite()
+			mat = data[1]
+			gun = data[2]
+			offset_view = data[3]
+			offset_world = data[4]
+		end
+	local mat_muzzle = MAT_MUZZLEFLASH
+	local muzzle_scale = 1
+	local muzzle_off = Vector( 0, 0 )
+	local muzzle_solid = false
+		if ( weapon.Muzzle ) then
+			mat_muzzle = weapon.Muzzle[1] or mat_muzzle
+			muzzle_scale = weapon.Muzzle[2] or muzzle_scale
+			muzzle_off = weapon.Muzzle.Off or muzzle_off
+			muzzle_solid = weapon.Muzzle.Solid
+		end
 	local start = gun[1]
 	local w = gun[2].x
 	local h = gun[2].y
@@ -200,10 +250,7 @@ function DrawWeapon( ply, x, y, scale, left, viewmodel )
 		dir = -1
 	end
 
-	local last = 0
-		if ( ply:GetActiveWeapon() and ply:GetActiveWeapon():IsValid() ) then
-			last = ply:GetActiveWeapon():LastShootTime()
-		end
+	local last = ply:GetActiveWeapon():LastShootTime()
 	local firing = last + 0.1 >= CurTime()
 
 	-- 
@@ -213,25 +260,39 @@ function DrawWeapon( ply, x, y, scale, left, viewmodel )
 
 	-- Draw gun
 	surface.SetDrawColor( COLOUR_WHITE )
-	surface.SetMaterial( MAT_GUNS_FUTURE )
+	surface.SetMaterial( mat )
 	if ( viewmodel ) then
-		DrawWithUVs( x, y, w * scale * GUNSCALE, h * GUNSCALE, start.x / MAT_GUNS_FUTURE_WIDTH, start.y / MAT_GUNS_FUTURE_HEIGHT, ( start.x + w ) / MAT_GUNS_FUTURE_WIDTH, ( start.y + h ) / MAT_GUNS_FUTURE_HEIGHT, left )
+		-- VIEW
+		DrawWithUVs( x + offset_view.x, y + offset_view.y, w * scale * GUNSCALE, h * GUNSCALE, start.x / MAT_GUNS_FUTURE_WIDTH, start.y / MAT_GUNS_FUTURE_HEIGHT, ( start.x + w ) / MAT_GUNS_FUTURE_WIDTH, ( start.y + h ) / MAT_GUNS_FUTURE_HEIGHT, left )
 	else
-		GAMEMODE:DrawBillboardedUVs( ply:GetPos(), Vector( w * scale * GUNSCALE, h * GUNSCALE ), MAT_GUNS_FUTURE, start.x / MAT_GUNS_FUTURE_WIDTH, start.y / MAT_GUNS_FUTURE_HEIGHT, ( start.x + w ) / MAT_GUNS_FUTURE_WIDTH, ( start.y + h ) / MAT_GUNS_FUTURE_HEIGHT, left )
+		-- WORLD
+		local ang = GAMEMODE:GetBillboardAngle()
+		GAMEMODE:DrawBillboardedUVs(
+			ply:GetPos() + ang:Forward() * dir * offset_world.x + ang:Up() * offset_world.y,
+			ply.ReloadingProgress,
+			Vector( w * scale * GUNSCALE, h * GUNSCALE ),
+			mat,
+			start.x / MAT_GUNS_FUTURE_WIDTH, start.y / MAT_GUNS_FUTURE_HEIGHT,
+			( start.x + w ) / MAT_GUNS_FUTURE_WIDTH, ( start.y + h ) / MAT_GUNS_FUTURE_HEIGHT,
+			left
+		)
 	end
 
 	-- Draw muzzle flash
 	if ( firing ) then
-		surface.SetMaterial( MAT_MUZZLEFLASH )
-		local size = math.random( 0.9, 1.1 )
-		local size = 1
+		surface.SetMaterial( mat_muzzle )
+		--local size = math.random( 0.9, 1.1 )
+		local size = 1 * muzzle_scale
 		local colour = math.sin( CurTime() * 50 ) / 2 + 0.5
+			if ( muzzle_solid ) then
+				colour = 1
+			end
 		local muzzle = 1 * dir
 			muzzle = muzzle * size
 		surface.SetDrawColor( Color( 255, 255, 255, 255 * colour ) )
 		DrawWithUVs(
-			x + w * scale * GUNSCALE * muzzle - border * muzzle,
-			y - border * 2 + 14 * -size + 14,
+			x + muzzle_off.x + w * scale * GUNSCALE * muzzle - border * muzzle,
+			y + muzzle_off.y - border * 2 + 14 * -size + 14,
 			w * scale * size * GUNSCALE,
 			h * size * GUNSCALE,
 			0, 0, 1, 1,

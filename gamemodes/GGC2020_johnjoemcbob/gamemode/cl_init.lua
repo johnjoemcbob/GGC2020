@@ -12,9 +12,11 @@ include( "shared.lua" )
 include( "cl_billboard.lua" )
 include( "cl_modelcache.lua" )
 include( "cl_player.lua" )
+include( "cl_moduleeditor.lua" )
 include( "cl_shipeditor.lua" )
 include( "cl_outsiderender.lua" )
 include( "cl_scene.lua" )
+include( "cl_2dmap.lua" )
 
 ------------------------
   -- Gamemode Hooks --
@@ -85,9 +87,120 @@ function GM:HUDPaint()
 	-- surface.DrawTexturedRectRotated( a[1], a[2], a[3], a[4], a[5] )
 	-- surface.DrawTexturedRectRotated( b[1], b[2], b[3], b[4], b[5] )
 end
+
+local hide = {
+	["CHudCrosshair"] = true,
+	--["CHudHealth"] = true,
+	["CHudBattery"] = true,
+	--["CHudAmmo"] = true,
+	["CHudSecondaryAmmo"] = true,
+	["CHudDamageIndicator"] = true,
+}
+function GM:HUDShouldDraw( name )
+	if ( hide[ name ] ) then return false end
+
+	return true
+end
 -------------------------
   -- /Gamemode Hooks --
 -------------------------
+
+-- More in sh_util.lua
+function draw.Circle( x, y, radius, seg, rotate )
+	local cir = GAMEMODE.GetCirclePoints( x, y, radius, seg, rotate )
+	surface.DrawPoly( cir )
+end
+
+function draw.CircleSegment( x, y, radius, seg, thickness, offset, percent, drawlater )
+	if ( thickness == 0 ) then
+		return draw.Circle( x, y, radius, seg )
+	end
+
+	local shapes = {}
+
+	local minseg = seg * offset / 100
+	local maxseg = seg * ( percent + offset ) / 100
+	local numsegrow = maxseg - minseg + 1 -- Extra one each row
+
+	local cirtotal, cirtotalx, cirtotaly = 0, 0, 0
+
+	for currentseg = minseg, maxseg - 1 do
+		local cir = {}
+			-- 1
+			local a = math.rad( ( ( currentseg / seg ) * -360 ) )
+			table.insert( cir, {
+				x = x + math.sin( a ) * ( radius - thickness ),
+				y = y + math.cos( a ) * ( radius - thickness ),
+				u = math.sin( a ) / 2 + 0.5,
+				v = math.cos( a ) / 2 + 0.5
+			} )
+				cirtotalx = cirtotalx + cir[#cir].x
+				cirtotaly = cirtotaly + cir[#cir].y
+				cirtotal = cirtotal + 1
+			-- 3
+			local a = math.rad( ( ( currentseg / seg ) * -360 ) )
+			table.insert( cir, {
+				x = x + math.sin( a ) * ( radius ),
+				y = y + math.cos( a ) * ( radius ),
+				u = math.sin( a ) / 2 + 0.5,
+				v = math.cos( a ) / 2 + 0.5
+			} )
+				cirtotalx = cirtotalx + cir[#cir].x
+				cirtotaly = cirtotaly + cir[#cir].y
+				cirtotal = cirtotal + 1
+			-- 4
+			local a = math.rad( ( ( ( currentseg + 1 ) / seg ) * -360 ) )
+			table.insert( cir, {
+				x = x + math.sin( a ) * ( radius ),
+				y = y + math.cos( a ) * ( radius ),
+				u = math.sin( a ) / 2 + 0.5,
+				v = math.cos( a ) / 2 + 0.5
+			} )
+				cirtotalx = cirtotalx + cir[#cir].x
+				cirtotaly = cirtotaly + cir[#cir].y
+				cirtotal = cirtotal + 1
+
+			-- 1
+			local a = math.rad( ( ( currentseg / seg ) * -360 ) )
+			table.insert( cir, {
+				x = x + math.sin( a ) * ( radius - thickness ),
+				y = y + math.cos( a ) * ( radius - thickness ),
+				u = math.sin( a ) / 2 + 0.5,
+				v = math.cos( a ) / 2 + 0.5
+			} )
+			-- 4
+			local a = math.rad( ( ( ( currentseg + 1 ) / seg ) * -360 ) )
+			table.insert( cir, {
+				x = x + math.sin( a ) * ( radius ),
+				y = y + math.cos( a ) * ( radius ),
+				u = math.sin( a ) / 2 + 0.5,
+				v = math.cos( a ) / 2 + 0.5
+			} )
+			-- 2
+			local a = math.rad( ( ( ( currentseg + 1 ) / seg ) * -360 ) )
+			table.insert( cir, {
+				x = x + math.sin( a ) * ( radius - thickness ),
+				y = y + math.cos( a ) * ( radius - thickness ),
+				u = math.sin( a ) / 2 + 0.5,
+				v = math.cos( a ) / 2 + 0.5
+			} )
+				cirtotalx = cirtotalx + cir[#cir].x
+				cirtotaly = cirtotaly + cir[#cir].y
+				cirtotal = cirtotal + 1
+		if ( not drawlater ) then
+			surface.DrawPoly( cir )
+		else
+			table.insert( shapes, cir )
+		end
+	end
+
+	local centerx, centery
+		centerx = cirtotalx / cirtotal
+		centery = cirtotaly / cirtotal
+	return centerx, centery, shapes
+	-- local a = math.rad( ( ( minseg / seg ) * -360 ) )
+	-- return ( x + math.sin( a ) * ( radius - thickness ) ), ( y + math.cos( a ) * ( radius - thickness ) )
+end
 
 function draw.StencilBasic( mask, inner )
 	render.ClearStencil()

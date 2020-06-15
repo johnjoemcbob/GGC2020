@@ -35,6 +35,12 @@ function GM:DrawBillboardedEnt( ent, material )
 	end )
 end
 
+function GM:DrawBillboardedEntSize( ent, material, w, h )
+	self:DrawBillboardedEntBase( ent, material, function()
+		GAMEMODE:DrawMeshPlane( w, h, 0, 0, 1, 1 )
+	end )
+end
+
 function GM:DrawBillboardedEntUVs( ent, material, u1, v1, u2, v2 )
 	self:DrawBillboardedEntBase( ent, material, function()
 		GAMEMODE:DrawMeshPlane( size, size, u1, v1, u2, v2 )
@@ -49,15 +55,7 @@ function GM:DrawBillboardedEntBase( ent, material, draw )
 		render.SetMaterial( mat )
 		local matrix = Matrix()
 			matrix:Translate( ent:GetPos() )
-			local ang = LocalPlayer():EyeAngles()
-				if ( LocalPlayer().CalcViewAngles ) then
-					ang = LocalPlayer().CalcViewAngles
-				end
-				ang.p = 0
-				ang.r = 0
-				ang:RotateAroundAxis( ang:Right(), 180 )
-				ang:RotateAroundAxis( ang:Up(), 90 )
-			matrix:Rotate( ang )
+			matrix:Rotate( self:GetBillboardAngle() )
 			matrix:Translate( Vector( 0, 0, 1 ) * ( -size * 0.9 ) )
 			matrix:Translate( Vector( 1, 0, 0 ) * -size / 2 * width )
 			matrix:Scale( Vector( width, 1, 1 ) )
@@ -67,7 +65,21 @@ function GM:DrawBillboardedEntBase( ent, material, draw )
 	render.SetLightingMode( 0 )
 end
 
-function GM:DrawBillboardedUVs( pos, size, material, u1, v1, u2, v2, left )
+function GM:GetBillboardAngle( dontconstraintoyaw )
+	local ang = LocalPlayer():EyeAngles()
+		if ( LocalPlayer().CalcViewAngles ) then
+			ang = LocalPlayer().CalcViewAngles
+		end
+		if ( !dontconstraintoyaw ) then
+			ang.p = 0
+			ang.r = 0
+		end
+		ang:RotateAroundAxis( ang:Right(), 180 )
+		ang:RotateAroundAxis( ang:Up(), 90 )
+	return ang
+end
+
+function GM:DrawBillboardedUVs( pos, rot, size, material, u1, v1, u2, v2, left, dontconstraintoyaw )
 	if ( left ) then
 		local temp = u1
 		u1 = u2
@@ -80,20 +92,14 @@ function GM:DrawBillboardedUVs( pos, size, material, u1, v1, u2, v2, left )
 		render.SetMaterial( mat )
 		local matrix = Matrix()
 			matrix:Translate( pos )
-			local ang = LocalPlayer():EyeAngles()
-				if ( LocalPlayer().CalcViewAngles ) then
-					ang = LocalPlayer().CalcViewAngles
-				else
-					ang:RotateAroundAxis( ang:Up(), 90 )
-				end
-				ang.p = 0
-				ang.r = 0
-				-- ang:RotateAroundAxis( ang:Forward(), 180 )
-				ang:RotateAroundAxis( ang:Right(), 180 )
+			local ang = self:GetBillboardAngle( dontconstraintoyaw )
+				ang:RotateAroundAxis( ang:Up(), 180 )
 			matrix:Rotate( ang )
 			matrix:Translate( Vector( 0, 1, 0 ) )
+			matrix:Translate( Vector( 0, 0, 1 ) * size.y * -1.8 * 0.75 )
+			matrix:Rotate( Angle( rot, 0, 0 ) )
+			matrix:Translate( Vector( 0, 0, 1 ) * size.y * -1.8 * 0.25 )
 			matrix:Translate( Vector( 1, 0, 0 ) * -size.x / 2 )
-			matrix:Translate( Vector( 0, 0, 1 ) * size.y * -1.8 )
 			-- matrix:Scale( size )
 		cam.PushModelMatrix( matrix )
 			GAMEMODE:DrawMeshPlane( size.x, size.y, u1, v1, u2, v2 )

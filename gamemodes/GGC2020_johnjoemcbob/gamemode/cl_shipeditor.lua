@@ -13,106 +13,51 @@ local DRAGDROP_SHIP = "DRAGDROP_SHIP"
 -------------------------
   -- Gamemode Hooks --
 -------------------------
-hook.Add( "Think", HOOK_PREFIX .. "_ShipEditor_Think", function()
-	if ( LocalPlayer():KeyDown( IN_ZOOM ) ) then
-		ShipEditor:CreateVGUI()
-	end
-end )
-
-hook.Add( "PostDrawOpaqueRenderables", HOOK_PREFIX .. "_ShipEditor_PostDrawOpaqueRenderables", function()
-	-- if ( ShipEditor.VGUI and ShipEditor.VGUI:IsVisible() and ShipEditor.ShipParts ) then
-	if ( ShipEditor.ShipParts ) then
-		for k, v in pairs( ShipEditor.ShipParts ) do
-			local pos = SHIPEDITOR_ORIGIN( #Ship.Ship + 1 ) +
-							Vector(
-								v.Grid.x + math.floor( v.Collisions.x / 2 ) + SHIPPARTS[v.Name][3].x,
-								-v.Grid.y - math.floor( v.Collisions.y / 2 ) + SHIPPARTS[v.Name][3].y
-							) * SHIPPART_SIZE
-
-			GAMEMODE.RenderCachedModel(
-				SHIPPARTS[v.Name][1],
-				pos,
-				Angle( 0, 90 * v.Rotation, 0 ),
-				Vector( 1, 1, 1 ),
-				nil,
-				Color( 255, 255, 255, 128 )
-			)
-
-			if ( v.AttachPoints ) then
-				for _, attach in pairs( v.AttachPoints ) do
-					if ( attach.Disabled ) then
-						GAMEMODE.RenderCachedModel(
-							SHIPENDCAP,
-							pos + Vector( attach[1].x, -attach[1].y ) * SHIPPART_SIZE / 2,
-							Angle( 90, 90 + attach[2], 0 ),
-							Vector( 1, 1, 1 ) * 0.9,
-							nil,
-							Color( 255, 255, 255, 128 )
-						)
-					end
-				end
-			end
-		end
-	end
-end )
-
-local cooldown = 0
-hook.Add( "CreateMove", HOOK_PREFIX .. "ShipEditor_CreateMove", function()
-	if ( ShipEditor.VGUI and input.WasKeyPressed( KEY_R ) and cooldown <= CurTime() ) then
-		local v = ShipEditor.GrabbedShipPart
-		if ( v and v.Rotation ) then
-			v.Rotation = v.Rotation + 1
-			if ( v.Rotation > 3 ) then
-				v.Rotation = 0
-			end
-			local w, h = v:GetSize()
-			v:SetSize( h, w )
-			v.Collisions = Vector( v.Collisions.y, v.Collisions.x )
-
-			-- Attach points
-			for k, attach in pairs( v.AttachPoints ) do
-				attach[1] = Vector( attach[1].y, -attach[1].x )
-				attach[2] = attach[2] + 90
-			end
+hook.Add( "KeyPress", HOOK_PREFIX .. "_ShipEditor_KeyPress", function( ply, key )
+	if ( ply == LocalPlayer() and key == IN_ZOOM ) then
+		if ( !ShipEditor.VGUI or !ShipEditor.VGUI:IsValid() ) then
+			ShipEditor:CreateVGUI()
 		else
-			-- TODO Try to find piece under mouse cursor
+			ShipEditor.VGUI:SetVisible( true )
 		end
-		cooldown = CurTime() + 0.1
 	end
 end )
 -------------------------
   -- /Gamemode Hooks --
 -------------------------
 
-function ShipEditor.SaveShip( self )
+function ShipEditor.Save( self )
 	local tab = self.ShipParts
 	local json = util.TableToJSON( tab, true )
 	file.CreateDir( HOOK_PREFIX ) 
-	file.Write( HOOK_PREFIX .. "/ship.txt", json )
+	file.Write( HOOK_PREFIX .. "/" .. self:GetName() .. ".txt", json )
 end
 
-function ShipEditor.LoadShip( self )
-	local json = file.Read( HOOK_PREFIX .. "/ship.txt" )
+function ShipEditor.Load( self )
+	local json = file.Read( HOOK_PREFIX .. "/" .. self:GetName() .. ".txt" )
 	local tab = util.JSONToTable( json )
 
 	local function load()
-		self:Initialize()
+		-- TODO REDO THIS
+		-- TODO REDO THIS
+		-- TODO REDO THIS
 
-		local index = 1
-		for k, v in pairs( tab ) do
-			local spawner = self:AddPartSpawner( v.Name, 0, true )
-				spawner.Grid = v.Grid
-				spawner.Rotation = v.Rotation
-				if ( v.Rotation % 2 != 0 ) then
-					local w, h = spawner:GetSize()
-					spawner:SetSize( h, w )
-					spawner.Collisions = Vector( spawner.Collisions.y, spawner.Collisions.x )
-				end 
-				spawner.Added = -index
-			self:OnDrop( spawner, true )
+		--self:Initialize()
 
-			index = index + 1
-		end
+		-- local index = 1
+		-- for k, v in pairs( tab ) do
+		-- 	local spawner = self:AddPartSpawner( v.Name, 0, true )
+		-- 		spawner.Grid = v.Grid
+		-- 		spawner.Rotation = v.Rotation
+		-- 			for rot = 1, v.Rotation do
+		-- 				ShipEditor.RotatePart( spawner )
+		-- 			end
+		-- 		spawner.AttachPoints = v.AttachPoints
+		-- 		spawner.Added = -index
+		-- 	self:OnDrop( spawner, true, true )
+
+		-- 	index = index + 1
+		-- end
 	end
 	if ( !ystart or ystart == 0 ) then
 		timer.Simple( 0.1, function() load() end )
@@ -122,15 +67,14 @@ function ShipEditor.LoadShip( self )
 end
 
 function ShipEditor.SendToServer()
-	local tab = table.shallowcopy( ShipEditor.ShipParts )
-		for k, v in pairs( tab ) do
-			v.Collisions = nil
-			v.Panel = nil
-		end
-	PrintTable( tab )
-	net.Start( NET_SHIPEDITOR_SPAWN )
-		net.WriteTable( tab )
-	net.SendToServer()
+	-- local tab = table.shallowcopy( ShipEditor.ShipParts )
+	-- 	for k, v in pairs( tab ) do
+	-- 		v.Collisions = nil
+	-- 		v.Panel = nil
+	-- 	end
+	-- net.Start( NET_SHIPEDITOR_SPAWN )
+	-- 	net.WriteTable( tab )
+	-- net.SendToServer()
 end
 
 local ystart = 0
@@ -157,7 +101,7 @@ function ShipEditor.CreateVGUI( self )
 	local cellline = 2
 	local cellcolour = Color( 255, 255, 255, 128 )
 
-	self:Initialize()
+	--self:Initialize()
 
 	local function getgridpos( mx, my )
 		local gx = math.Clamp( math.floor( ( mx / self.CellSize ) ), 1, self.Cells )
@@ -192,43 +136,11 @@ function ShipEditor.CreateVGUI( self )
 
 			surface.SetDrawColor( Color( 255, 0, 0, 12 ) )
 			surface.DrawRect( gx * ShipEditor.CellSize, ystart + gy * ShipEditor.CellSize - ShipEditor.CellSize, ShipEditor.CellSize, ShipEditor.CellSize )
-			
-			-- draw.SimpleText( gx .. " " .. gy, "DermaDefault", 50, 50, COLOUR_WHITE )
-			
-			-- Collision debug
-			for x = 1, ShipEditor.Cells do
-				for y = 1, ShipEditor.Cells do
-					if ( ShipEditor.ShipCollisions[x][y] ) then
-						surface.SetDrawColor( Color( 0, 255, 0, 12 ) )
-						surface.DrawRect( x * ShipEditor.CellSize, ystart + y * ShipEditor.CellSize - ShipEditor.CellSize, ShipEditor.CellSize, ShipEditor.CellSize )
-					end
-				end
-			end
 		end
 		left:Receiver(
 			DRAGDROP_SHIP,
 			function( receiver, panels, isDropped, menuIndex, mouseX, mouseY )
-				-- if ( isDropped ) then
-					local x, y = frm:GetPos()
-					for k, v in pairs( panels ) do
-						-- If just picked up then create a new spawner
-						if ( !v.Added ) then
-							self.Spawners[v.Name] = nil
-							ShipEditor:AddPartSpawner( v.Name, v.Index, false, v.DefaultPos )
-						end
-
-						-- Drag/drop
-						local gx, gy = getgridpos( mouseX, mouseY )
-						if ( ShipEditor:CanDrop( v, gx, gy ) ) then
-							v.Grid = Vector( gx, gy )
-							self:OnDrop( v, true )
-						end
-
-						-- Track
-						v.Selected = !isDropped
-						self.GrabbedShipPart = v
-					end
-				-- end
+				
 			end,
 			{}
 		)
@@ -238,36 +150,52 @@ function ShipEditor.CreateVGUI( self )
 	local right = vgui.Create( "DPanel", frm )
 		right:SetSize( width / 3 - border, height )
 		right:Dock( RIGHT )
-		right:Receiver(
-			DRAGDROP_SHIP,
-			function( receiver, panels, isDropped, menuIndex, mouseX, mouseY )
-				if ( isDropped ) then
-					for k, v in pairs( panels ) do
-						v:Remove()
-						self:OnDrop( v, false )
-					end
-				end
-			end,
-			{}
-		)
 	self.Right = right
 
+	local textentry = vgui.Create( "DTextEntry", right )
+		textentry:SetSize( 75, 20 )
+		textentry:SetPlaceholderText( "Ship name" )
+		textentry:SetValue( LocalPlayer().CurrentShipName or "" )
+		textentry:SetUpdateOnType( true )
+		function textentry:OnValueChange( value )
+			LocalPlayer().CurrentShipName = value
+		end
+		textentry:Dock( TOP )
+	self.VGUI.TextEntry = textentry
+
 	local button = vgui.Create( "DButton", right )
-		button:SetText( "Spawn Physical" )
+		button:SetText( "Load" )
+		button:SetSize( 250, 20 )
+		button.DoClick = function()
+			self:CreateVGUI()
+		end
+	button:Dock( TOP )
+
+	local button = vgui.Create( "DButton", right )
+		button:SetText( "Save" )
 		button:SetSize( 250, 30 )
 		button.DoClick = function()
-			-- Communicate to server
-			ShipEditor:SaveShip()
-			ShipEditor:SendToServer()
-
-			-- Hide editor and client models
-			ShipEditor.ShipParts = {}
-			ShipEditor.VGUI:Remove()
-			ShipEditor.VGUI = nil
+			ShipEditor:Save()
 		end
 	button:Dock( BOTTOM )
 
-	self:LoadShip()
+	local spawnerpanel = vgui.Create( "DPanel", right )
+		spawnerpanel:Receiver(
+			DRAGDROP_SHIP,
+			function( receiver, panels, isDropped, menuIndex, mouseX, mouseY )
+				-- if ( isDropped ) then
+				-- 	for k, v in pairs( panels ) do
+				-- 		v:Remove()
+				-- 		self:OnDrop( v, false )
+				-- 	end
+				-- end
+			end,
+			{}
+		)
+		spawnerpanel:Dock( FILL )
+	right.SpawnerPanel = spawnerpanel
+
+	self:Load()
 end
 
 function ShipEditor.Initialize( self )
@@ -345,15 +273,15 @@ function ShipEditor.AddPartSpawner( self, name, index, force, pos )
 		end
 		if ( !pos ) then
 			pos = self:GetFirstFreeSpawnerPos( SHIPPARTS[name][2] )
-			pos.x = 10 + pos.x * self.CellSize
-			pos.y = 10 + pos.y * self.CellSize
+			pos.x = pos.x * ( self.CellSize + 4 )
+			pos.y = pos.y * ( self.CellSize + 4 )
 		end
 		if ( !index ) then
 			index = tablelength( self.Spawners )
 		end
 
 		-- if ( !self.Spawners[name] or force ) then
-			spawner = vgui.Create( "DPanel", self.Right )
+			spawner = vgui.Create( "DPanel", self.Right.SpawnerPanel )
 				spawner:SetPos( pos.x, pos.y )
 				spawner:SetSize( self.CellSize * SHIPPARTS[name][2].x, self.CellSize * SHIPPARTS[name][2].y )
 				spawner:Droppable( DRAGDROP_SHIP )
@@ -383,7 +311,7 @@ end
 function ShipEditor.CanDrop( self, v, gx, gy )
 	for x = 0, v.Collisions.x - 1 do
 		for y = 0, v.Collisions.y - 1 do
-			if ( gx + x > self.Cells or gy + y > self.Cells ) then
+			if ( gx + x < 1 or gy + y < 1 or gx + x > self.Cells or gy + y > self.Cells ) then
 				return false
 			end
 			if ( self.ShipCollisions[gx + x][gy + y] and !self:CollideIsSelf( v, gx + x, gy + y ) ) then
@@ -411,7 +339,7 @@ function ShipEditor.CollideIsSelf( self, v, gx, gy )
 	return false
 end
 
-function ShipEditor.OnDrop( self, v, add )
+function ShipEditor.OnDrop( self, v, add, load )
 	-- Remove this as a spawner and create new
 	-- Unless loading from file!
 
@@ -449,77 +377,9 @@ function ShipEditor.OnDrop( self, v, add )
 	end
 
 	-- Temp, should only save if something changed, at least
-	self:SaveShip()
-end
-
-function ShipEditor.UpdateAttachPoints( self, v, recursed )
-	if ( !v.AttachPoints ) then return end
-
-	-- Create buttons if none
-	if ( !v.AttachButtons ) then
-		v.AttachButtons = {}
-		for k, attach in pairs( v.AttachPoints ) do
-			local button = vgui.Create( "DButton", self.Left )
-				button:SetText( "" )
-				button.Paint = function( self, w, h )
-					local col = Color( 0, 255, 100, 255 )
-						if ( self.Disabled ) then
-							col = Color( 255, 0, 100, 100 )
-						end
-					surface.SetDrawColor( col )
-					surface.DrawRect( 0, 0, w, h )
-				end
-				button.DoClick = function( self )
-					self.Disabled = !self.Disabled
-					attach.Disabled = self.Disabled
-				end
-			table.insert( v.AttachButtons, button )
-		end
-	end
-
-	-- Update buttons to new attach point positions
-	for k, attach in pairs( v.AttachPoints ) do
-		local button = v.AttachButtons[k]
-
-		local size = self.CellSize
-		local pos = attach[1]
-		local ang = attach[2]
-			-- ang = ang + v.Rotation * 90
-		local w = size
-		local h = 16
-			if ( ang % 180 != 0 ) then
-				w = h
-				h = size
-			end
-		local x, y = v.Grid.x * size + 1, ystart + ( v.Grid.y - 1 ) * size + 1
-		button:SetPos( x + ( pos.x + 1 ) * size / 2 - w / 2, y + ( pos.y + 1 ) * size / 2 - h / 2 )
-		button:SetSize( w, h )
-	end
-
-	-- Check attach points for collision, in which case they are invalid
-	for k, attach in pairs( v.AttachPoints ) do
-		local button = v.AttachButtons[k]
-
-		local pos = v.Grid + attach[1]
-		if ( !self:CanDrop( v, pos.x, pos.y ) ) then
-			-- Hide off screen..
-			button:SetPos( -100, -100 )
-		end
-	end
-
-	-- Get all neighbours and check those again, but don't recurse further than that
-	if ( !recursed ) then
-		-- TODO currently just updates all...
-		for k, part in pairs( self.ShipParts ) do
-			self:UpdateAttachPoints( part.Panel, true )
-		end
-	end
-end
-
-function ShipEditor.RemoveAttachPoints( self, v )
-	for k, button in pairs( v.AttachButtons ) do
-		button:Remove()
-	end
+	-- if ( !load ) then
+	-- 	self:SaveShip()
+	-- end
 end
 
 function ShipEditor.SetCollision( self, v, on )
@@ -530,6 +390,15 @@ function ShipEditor.SetCollision( self, v, on )
 	end
 end
 
+function ShipEditor.GetName( self )
+	local name = ""
+	if ( self.VGUI and self.VGUI:IsValid() ) then
+		name = LocalPlayer().CurrentShipName
+	end
+	return ( name != "" ) and name or "ship"
+end
+
+-- For individual part rendering, broken down into 3x3 patterns for each cell
 function AddRotatableSegment( x, y, gx, gy, w, h, rot, segx, segy )
 	if ( !segx ) then segx = 1 end
 	if ( !segy ) then segy = 1 end
@@ -558,4 +427,4 @@ function AddRotatableSegment( x, y, gx, gy, w, h, rot, segx, segy )
 	)
 end
 
--- ShipEditor:CreateVGUI()
+--ShipEditor:CreateVGUI()
