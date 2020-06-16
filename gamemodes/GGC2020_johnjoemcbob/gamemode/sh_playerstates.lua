@@ -19,6 +19,7 @@ function includeanddownload()
 		"sh_ps_toplanetanim",
 		"sh_ps_planet",
 		"sh_ps_fromplanetanim",
+		"sh_ps_wavedefense",
 	}
 	for k, file in pairs( files ) do
 		local path = dir .. file .. ".lua"

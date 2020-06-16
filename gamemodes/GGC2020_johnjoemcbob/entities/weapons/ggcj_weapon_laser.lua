@@ -47,7 +47,8 @@ SWEP.Primary.Spread = 2
 SWEP.Primary.NumberofShots = 5
 SWEP.Primary.Recoil = 5
 SWEP.Primary.Delay = 0
-SWEP.Primary.Force = 20
+SWEP.Primary.Force = 0.03
+SWEP.Primary.SelfForce = 20
 SWEP.Primary.MaxDistance = 500
 SWEP.Primary.ShootSound = "thrusters/mh2.wav"
 
@@ -63,7 +64,12 @@ function SWEP:Shoot()
 	if ( tr.Hit ) then
 		self.LastTraceLength = tr.Fraction * self.Primary.MaxDistance
 
-		local alive = tr.Entity and ( tr.Entity:IsNPC() or tr.Entity:IsPlayer() )
+		local alive = tr.Entity and ( GAMEMODE:IsNPC( tr.Entity ) or tr.Entity:IsPlayer() )
+
+		-- Force player backwards
+		--if ( tr.Hit ) then
+			self.Owner:SetVelocity( -self.Owner:EyeAngles():Forward() * self.Primary.SelfForce )
+		--end
 
 		-- Scorch ground
 		if ( tr.HitWorld or !alive ) then
@@ -94,9 +100,6 @@ function SWEP:ShootEffects()
 		-- Screenshake
 		util.ScreenShake( self.Owner:GetPos(), 0.2, 5, 0.1, 1 )
 	end
-
-	-- Force player backwards
-	self.Owner:SetVelocity( -self.Owner:EyeAngles():Forward() * self.Primary.Force )
 
 	-- Sound
 	if ( !self.SoundLoop ) then
@@ -131,9 +134,11 @@ if ( CLIENT ) then
 		local thick = 4
 		local between = 4
 
-		surface.SetDrawColor( COLOUR_WHITE )
-		draw.CircleSegment( x - between, y, rad, segs, thick, 0, 50 )
-		draw.CircleSegment( x + between, y, rad, segs, thick, 50, 50 )
+		return {
+			COLOUR_WHITE,
+			{ x - between, y, rad, segs, thick, 0, 50 },
+			{ x + between, y, rad, segs, thick, 50, 50 },
+		}
 	end
 
 	local colour = Color( 255, 0, 157, 255 )

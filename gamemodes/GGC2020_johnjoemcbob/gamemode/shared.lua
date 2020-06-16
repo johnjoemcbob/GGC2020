@@ -72,7 +72,11 @@ function GM:PlayerFootstep( ply, pos, foot, sound, volume, rf )
 		-- Punch viewmodel?
 		-- ply.ViewModelPos = ply.ViewModelPos + ply:GetRight() * 1 * dir
 
-		GAMEMODE.AddWorldText( pos + Vector( 0, 0, 5 ), Vector( 0, 0, 0 ), Angle( 0, 0, 0 ), 0.1, "tum", 0.5, false )
+		GAMEMODE.AddWorldText( pos + Vector( 0, 0, 5 ), Vector( 0, 0, 0 ), Angle( 0, 0, 0 ), 0.1, "tum", COLOUR_WHITE, 0.5, false )
 	end
 	return true
+end
+
+function GM:IsNPC( ent )
+	return ( ent:IsNPC() or ent:IsNextBot() )
 end

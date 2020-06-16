@@ -11,7 +11,7 @@ MAT_EXPLOSION = Material( "explosion.png", "nocull 1 smooth 0" )
 EXPLOSION_DAMAGE = 100
 EXPLOSION_DURATION = 1
 EXPLOSION_FRAMES = 64
-EXPLOSION_SIZE = 256
+EXPLOSION_SIZE = 256 / 50
 EXPLOSION_FORCE = 1000
 EXPLOSION_VISUAL_OFFSET = EXPLOSION_SIZE * 1.2
 
@@ -19,11 +19,11 @@ local NETSTRING_EXPLODE = HOOK_PREFIX .. "Explode"
 if ( SERVER ) then
 	util.AddNetworkString( NETSTRING_EXPLODE )
 
-	function GM:Explode( attacker, pos, radius )
+	function GM:Explode( attacker, pos, radius, dmg )
 		-- Hurt players/push objects
 		for k, v in pairs( ents.FindInSphere( pos, radius ) ) do
-			if ( v:IsPlayer() or v:IsNPC() ) then
-				local dmg = EXPLOSION_DAMAGE
+			if ( v:IsPlayer() or GAMEMODE:IsNPC( v ) ) then
+				local dmg = dmg or EXPLOSION_DAMAGE
 					if ( v == attacker ) then
 						dmg = dmg / 10
 					end
@@ -45,6 +45,7 @@ if ( SERVER ) then
 		-- Net send to clients!
 		net.Start( NETSTRING_EXPLODE )
 			net.WriteVector( pos )
+			net.WriteFloat( radius )
 		net.Broadcast()
 	end
 end
@@ -52,14 +53,15 @@ end
 if ( CLIENT ) then
 	net.Receive( NETSTRING_EXPLODE, function( lngth )
 		local pos = net.ReadVector()
+		local radius = net.ReadFloat()
 
 		-- Store for render
-		GAMEMODE:Explode( pos )
+		GAMEMODE:Explode( pos, radius )
 	end )
 
-	function GM:Explode( pos )
+	function GM:Explode( pos, radius )
 		LocalPlayer().CurrentExplosions = LocalPlayer().CurrentExplosions or {}
-		table.insert( LocalPlayer().CurrentExplosions, { pos, CurTime() } )
+		table.insert( LocalPlayer().CurrentExplosions, { pos, CurTime(), Radius = radius } )
 	end
 
 	hook.Add( "PostDrawTranslucentRenderables", HOOK_PREFIX .. "Explode_PostDrawTranslucentRenderables", function()
@@ -78,7 +80,9 @@ if ( CLIENT ) then
 			local u1, v1, u2, v2 = GetExplosionUVs( frame )
 			local ang = GAMEMODE:GetBillboardAngle( true )
 			GAMEMODE:DrawBillboardedUVs(
-				pos + ang:Up() * EXPLOSION_VISUAL_OFFSET, 0, Vector( 1, 1 ) * EXPLOSION_SIZE,
+				pos + ang:Up() * EXPLOSION_VISUAL_OFFSET * exp.Radius,
+				0,
+				Vector( 1, 1 ) * EXPLOSION_SIZE * exp.Radius,
 				MAT_EXPLOSION,
 				u1, v1, u2, v2,
 				false,

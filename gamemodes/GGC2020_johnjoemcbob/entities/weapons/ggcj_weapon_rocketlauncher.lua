@@ -81,8 +81,10 @@ if ( CLIENT ) then
 		local thick = 4
 		local between = 4
 
-		surface.SetDrawColor( COLOUR_WHITE )
-		draw.CircleSegment( x, y - between, rad, segs, thick, 25, 50 )
-		draw.CircleSegment( x, y + between, rad, segs, thick, 75, 50 )
+		return {
+			COLOUR_WHITE,
+			{ x, y - between, rad, segs, thick, 25, 55 },
+			{ x, y + between, rad, segs, thick, 75, 55 },
+		}
 	end
 end

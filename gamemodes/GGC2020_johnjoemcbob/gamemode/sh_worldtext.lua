@@ -9,13 +9,14 @@
 if ( SERVER ) then
 	util.AddNetworkString( HOOK_PREFIX .. "WorldText" )
 
-	function GM.AddWorldText( pos, vel, ang, scale, text, dur, inout )
+	function GM.AddWorldText( pos, vel, ang, scale, text, colour, dur, inout )
 		net.Start( HOOK_PREFIX .. "WorldText" )
 			net.WriteVector( pos )
 			net.WriteVector( vel )
 			net.WriteAngle( ang )
 			net.WriteFloat( scale )
 			net.WriteString( text )
+			net.WriteColor( colour )
 			net.WriteFloat( dur )
 			net.WriteBool( inout )
 		net.Broadcast()
@@ -29,18 +30,19 @@ if ( CLIENT ) then
 		local ang = net.ReadAngle()
 		local scale = net.ReadFloat()
 		local text = net.ReadString()
+		local colour = net.ReadColor()
 		local dur = net.ReadFloat()
 		local inout = net.ReadBool()
 
-		GAMEMODE.AddWorldText( pos, vel, ang, scale, text, dur, inout )
+		GAMEMODE.AddWorldText( pos, vel, ang, scale, text, colour, dur, inout )
 	end )
 
-	function GM.AddWorldText( pos, vel, ang, scale, text, dur, inout )
+	function GM.AddWorldText( pos, vel, ang, scale, text, colour, dur, inout )
 		local rnd = 0
 		if ( ang == Angle( 0, 0, 0 ) ) then
 			rnd = math.random( -1, 1 ) * 70
 		end
-		table.insert( WORLDTEXTS, { Pos = pos, Vel = vel, Angle = ang, Scale = scale, Text = text, Dur = dur, InOut = inout, Start = CurTime(), RandomAngle = rnd } )
+		table.insert( WORLDTEXTS, { Pos = pos, Vel = vel, Angle = ang, Scale = scale, Text = text, Colour = colour, Dur = dur, InOut = inout, Start = CurTime(), RandomAngle = rnd } )
 	end
 
 	hook.Add( "PreDrawEffects", "TG_WorldText_PreDrawEffects", function( ply )
@@ -71,7 +73,7 @@ if ( CLIENT ) then
 					cam.Start3D2D( pos - Vector( 0, 0, 1 ) * mult * width * scale, angle, scale )
 						if ( !text.InOut ) then
 							local a = 1 - ( math.abs( 0.5 - progress ) * 2 )
-							draw.SimpleText( txt, font, 0, 0, Color( 255, 255, 255, a * 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+							draw.SimpleText( txt, font, 0, 0, Color( text.Colour.r, text.Colour.g, text.Colour.b, a * 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
 						else
 							local strs = string.Split( txt, "" )
 							local x = 0

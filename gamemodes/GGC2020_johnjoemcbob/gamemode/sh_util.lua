@@ -41,6 +41,15 @@ function LoadTableFromJSON( path, name )
 	return tab
 end
 
+function LerpColour( dif, current, target )
+	return Color(
+		Lerp( dif, current.r, target.r ),
+		Lerp( dif, current.g, target.g ),
+		Lerp( dif, current.b, target.b ),
+		Lerp( dif, current.a, target.a )
+	)
+end
+
 function tablelength(T)
 	local count = 0
 	for _ in pairs(T) do count = count + 1 end

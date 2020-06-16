@@ -30,24 +30,24 @@ mesh.End()
 
 -- Functions
 function GM:DrawBillboardedEnt( ent, material )
-	self:DrawBillboardedEntBase( ent, material, function()
+	self:DrawBillboardedEntBase( ent, 0, material, function()
 		MESH_BILLBOARD:Draw()
 	end )
 end
 
 function GM:DrawBillboardedEntSize( ent, material, w, h )
-	self:DrawBillboardedEntBase( ent, material, function()
+	self:DrawBillboardedEntBase( ent, 0, material, function()
 		GAMEMODE:DrawMeshPlane( w, h, 0, 0, 1, 1 )
 	end )
 end
 
-function GM:DrawBillboardedEntUVs( ent, material, u1, v1, u2, v2 )
-	self:DrawBillboardedEntBase( ent, material, function()
+function GM:DrawBillboardedEntUVs( ent, rot, material, u1, v1, u2, v2 )
+	self:DrawBillboardedEntBase( ent, rot, material, function()
 		GAMEMODE:DrawMeshPlane( size, size, u1, v1, u2, v2 )
 	end )
 end
 
-function GM:DrawBillboardedEntBase( ent, material, draw )
+function GM:DrawBillboardedEntBase( ent, rot, material, draw )
 	mat:SetTexture( "$basetexture", material:GetTexture( "$basetexture" ) )
 
 	local width = 0.5
@@ -56,8 +56,9 @@ function GM:DrawBillboardedEntBase( ent, material, draw )
 		local matrix = Matrix()
 			matrix:Translate( ent:GetPos() )
 			matrix:Rotate( self:GetBillboardAngle() )
-			matrix:Translate( Vector( 0, 0, 1 ) * ( -size * 0.9 ) )
 			matrix:Translate( Vector( 1, 0, 0 ) * -size / 2 * width )
+			matrix:Rotate( Angle( rot, 0, 0 ) )
+			matrix:Translate( Vector( 0, 0, 1 ) * ( -size * 0.9 ) )
 			matrix:Scale( Vector( width, 1, 1 ) )
 		cam.PushModelMatrix( matrix )
 			draw()
@@ -88,7 +89,7 @@ function GM:DrawBillboardedUVs( pos, rot, size, material, u1, v1, u2, v2, left, 
 
 	mat:SetTexture( "$basetexture", material:GetTexture( "$basetexture" ) )
 
-	render.SetLightingMode( 2 )
+	render.SetLightingMode( 0 )
 		render.SetMaterial( mat )
 		local matrix = Matrix()
 			matrix:Translate( pos )
@@ -108,6 +109,7 @@ function GM:DrawBillboardedUVs( pos, rot, size, material, u1, v1, u2, v2, left, 
 end
 
 function GM:DrawMeshPlane( w, h, u1, v1, u2, v2 )
+	local col = render.GetColourModulation()
 	local us = {}
 		us[0] = u1
 		us[1] = u2
@@ -118,6 +120,7 @@ function GM:DrawMeshPlane( w, h, u1, v1, u2, v2 )
 		for i = 1, #verts do
 			mesh.Position( Vector( verts[i].pos.x * w, 0, verts[i].pos.y * h ) )
 			mesh.TexCoord( 0, us[verts[i].u], vs[verts[i].v] )
+			mesh.Color( col.r, col.g, col.b, col.a )
 			mesh.AdvanceVertex()
 		end
 	mesh.End()

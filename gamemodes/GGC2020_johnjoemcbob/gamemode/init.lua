@@ -99,7 +99,7 @@ function GM:HandlePlayerJumping( ply, vel )
 
 		ply:ViewPunch( Angle( -5, 0, 0 ) )
 		util.Decal( "Scorch", ply:EyePos(), ply:GetPos() + Vector( 0, 0, -10 ), ply )
-		GAMEMODE.AddWorldText( ply:GetPos() + Vector( 0, 0, 5 ), Vector( 0, 0, 0 ), Angle( 0, 0, 0 ), 0.3, "pffffft", 1, false )
+		GAMEMODE.AddWorldText( ply:GetPos() + Vector( 0, 0, 5 ), Vector( 0, 0, 0 ), Angle( 0, 0, 0 ), 0.3, "pffffft", COLOUR_WHITE, 1, false )
 	
 		-- If moving at the same time, draw view backwards
 		local hor = Vector( vel.x, vel.y, 0 ):LengthSqr()

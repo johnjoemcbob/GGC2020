@@ -192,6 +192,7 @@ if ( CLIENT ) then
 		local pos = Vector( -324, 379, 225 )
 		GAMEMODE:DrawBillboardedUVs( 
 			pos,
+			0,
 			Vector( 0.6, 1 ) * PlayerSize,
 			MAT_BARTENDER,
 			0, 0, 1, 1,
@@ -216,6 +217,7 @@ if ( CLIENT ) then
 		local u1, v1, u2, v2 = GetUVs( mat, anim, frame )
 		GAMEMODE:DrawBillboardedUVs(
 			PlayerPos + Vector( 0, 0, -PlayerSize ) * 0.92,
+			0,
 			Vector( 0.6, 1 ) * PlayerSize,
 			mat,
 			u1, v1, u2, v2,

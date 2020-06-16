@@ -45,9 +45,11 @@ if ( CLIENT ) then
 		local rad = 12
 		local segs = 5
 		local thick = 2
-		local between = 4
 
-		surface.SetDrawColor( COLOUR_WHITE )
-		draw.CircleSegment( x, y - between, rad, segs, thick, 0, 100 )
+		return {
+			COLOUR_WHITE,
+			{ x, y, rad, segs, thick, 0, 120 },
+			{ x, y, rad, segs, thick, 0, 0 },
+		}
 	end
 end

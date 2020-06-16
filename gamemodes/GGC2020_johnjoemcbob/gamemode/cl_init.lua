@@ -220,6 +220,32 @@ function draw.StencilBasic( mask, inner )
 	render.SetStencilEnable( false )
 end
 
+local current_colmods = {}
+	function render.SetColourModulation( col )
+		render.SetColorModulation( col.r / 255, col.g / 255, col.b / 255 )
+	end
+	function render.GetColourModulation()
+		if ( #current_colmods == 0 ) then
+			return COLOUR_WHITE
+		end
+		return current_colmods[#current_colmods]
+	end
+
+	function render.PushColourModulation( col )
+		render.SetColourModulation( col )
+		table.insert( current_colmods, col )
+	end
+
+	function render.PopColourModulation()
+		if ( #current_colmods == 0 ) then
+			render.SetColourModulation( COLOUR_WHITE )
+		else
+			local last = #current_colmods
+			render.SetColourModulation( current_colmods[last] )
+			table.remove( current_colmods, last )
+		end
+	end
+
 concommand.Add( "ggcj_getpos", function( ply, cmd, args )
 	print( GetPrettyVector( ply:GetPos() ) )
 end )

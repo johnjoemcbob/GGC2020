@@ -90,12 +90,14 @@ function SWEP:Reload()
 	if ( self:Clip1() < self.Primary.ClipSize and self.Owner:GetAmmoCount( self.Primary.Ammo ) > 0 ) then
 		--self:DefaultReload( ACT_VM_RELOAD )
 		timer.Simple( self.ReloadDuration, function()
-			local ammo = math.min( self.Primary.ClipSize, self.Owner:GetAmmoCount( self.Primary.Ammo ) )
-			self.Owner:RemoveAmmo( ammo - self:Clip1(), self.Primary.Ammo )
-			self:SetClip1( ammo )
+			if ( self and self:IsValid() ) then
+				local ammo = math.min( self.Primary.ClipSize, self.Owner:GetAmmoCount( self.Primary.Ammo ) )
+				self.Owner:RemoveAmmo( ammo - self:Clip1(), self.Primary.Ammo )
+				self:SetClip1( ammo )
 
-			if ( self.OnReloadFinish ) then
-				self:OnReloadFinish()
+				if ( self.OnReloadFinish ) then
+					self:OnReloadFinish()
+				end
 			end
 		end )
 
@@ -160,8 +162,47 @@ if CLIENT then
 		return self.Sprite
 	end
 
-	function SWEP:Crosshair( x, y )
-		surface.SetDrawColor( COLOUR_WHITE )
-		surface.DrawRect( x, y, 2, 2 )
+	function SWEP:RenderCrosshair( x, y )
+		local cross = self:Crosshair( 0, 0 )
+		if ( !cross ) then return end
+		LocalPlayer().LastCrosshair = LocalPlayer().LastCrosshair or cross
+
+		-- Lerp
+		-- TODO lerp colour
+		local d = FrameTime() * 30
+		for c = 2, 3 do
+			local circ = LocalPlayer().LastCrosshair[c]
+			local targ = cross[c]
+			for i = 1, 7 do
+				circ[i] = Lerp( d, circ[i], targ[i] )
+			end
+		end
+
+		-- Render
+		surface.SetDrawColor( LocalPlayer().LastCrosshair[1] )
+		local c = LocalPlayer().LastCrosshair[2]
+		draw.CircleSegment( c[1], c[2], c[3], c[4], c[5], c[6], c[7] )
+		local c = LocalPlayer().LastCrosshair[3]
+		draw.CircleSegment( c[1], c[2], c[3], c[4], c[5], c[6], c[7] )
 	end
+
+	function SWEP:Crosshair( x, y )
+		local rad = 4
+		local segs = 3
+		local thick = 4
+
+		return {
+			COLOUR_WHITE,
+			{ x, y, rad, segs, thick, 0, 100 },
+			{ x, y, rad, segs, thick, 50, 50 },
+		}
+	end
+
+	hook.Add( "PlayerSwitchWeapon", HOOK_PREFIX .. "Weapon_PlayerSwitchWeapon", function( ply, oldwep, newwep )
+		ply.SwitchWeaponLast = oldwep
+		ply.SwitchWeaponTime = CurTime()
+
+		ply.LastViewModelAngles = nil
+		ply.ViewModelAngles = ply:EyeAngles()
+	end )
 end

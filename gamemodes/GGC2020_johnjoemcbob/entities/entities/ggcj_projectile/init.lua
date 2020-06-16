@@ -33,11 +33,13 @@ function ENT:Initialize()
 	self:SetMoveType( MOVETYPE_VPHYSICS )
 	self:PhysicsInit( SOLID_VPHYSICS )
 	self:PhysWake()
+	self:SetTrigger( true )
 
 	-- Variables
 	self.Range = 100
 	self.Collide = 0
 	self.MaxDamageCollide = 1
+	self.HasCollided = false
 end
 
 function ENT:OnRemove()
@@ -46,6 +48,10 @@ end
 
 function ENT:OnTakeDamage( dmg )
 	
+end
+
+function ENT:StartTouch( entity )
+	self:CollideWithEnt( entity )
 end
 
 function ENT:PhysicsCollide( colData, collider )
@@ -58,7 +64,7 @@ function ENT:CollideWithEnt( ent )
 	self.HasCollided = true
 
 	-- Damage (start explosion)
-	GAMEMODE:Explode( self.Owner, self:GetPos(), self.Range )
+	GAMEMODE:Explode( self.Owner, self:GetPos(), self.Range, self.Damage )
 
 	-- testing/fun
 	-- if ( ent:GetClass() == "prop_physics" and !(ent:IsNPC() or ent:IsPlayer()) ) then

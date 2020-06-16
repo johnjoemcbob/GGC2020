@@ -192,12 +192,22 @@ function GM:PreDrawViewModel( viewmodel, ply, weapon )
 		local pos = ply:EyePos() + ply:EyeAngles():Forward() * 10
 		cam.Start3D2D( pos, ang, 0.01 )
 			draw.NoTexture()
-			weapon:Crosshair( 0, 0 )
+			weapon:RenderCrosshair( 0, 0 )
 		cam.End3D2D()
 	end
 	cam.Start3D2D( ply.ViewModelPos, ply.ViewModelAngles, 1 )
 		DrawWeapon( ply, -60, 0, scale, true, true )
 	cam.End3D2D()
+
+	if ( ply.SwitchWeaponTime and ply.SwitchWeaponTime + 0.1 > CurTime() ) then
+		local target = ply:EyeAngles() + Angle( 120, -90, 0 )
+		ply.LastViewModelAngles = ply.LastViewModelAngles or ang
+		ply.LastViewModelAngles = LerpAngle( ft * VIEWMODEL_LERP_ANGLE / 2, UnNaNAngle( ply.LastViewModelAngles ), target )
+
+		cam.Start3D2D( ply.ViewModelPos, ply.LastViewModelAngles, 1 )
+			DrawWeapon( ply.SwitchWeaponLast, -60, 0, ply.SwitchWeaponLast.Sprite and ply.SwitchWeaponLast.Sprite.Scale or 1, true, true )
+		cam.End3D2D()
+	end
 
 	return true
 end
@@ -214,7 +224,10 @@ end )
 
 -- UV anims
 function DrawWeapon( ply, x, y, scale, left, viewmodel )
-	local weapon = ply:GetActiveWeapon()
+	local weapon = ply
+		if ( ply:IsPlayer() ) then
+			weapon = ply:GetActiveWeapon()
+		end
 	if ( !weapon or !weapon:IsValid() ) then return end
 
 	local offset_view = Vector( 0, 0 )
@@ -250,7 +263,10 @@ function DrawWeapon( ply, x, y, scale, left, viewmodel )
 		dir = -1
 	end
 
-	local last = ply:GetActiveWeapon():LastShootTime()
+	local last = 0
+		if ( weapon.LastShootTime ) then
+			last = weapon:LastShootTime()
+		end
 	local firing = last + 0.1 >= CurTime()
 
 	-- 
@@ -310,7 +326,7 @@ function DrawPlayerWithUVs( ply, mat, anim, frame, left )
 		u1 = u2
 		u2 = temp
 	end
-	GAMEMODE:DrawBillboardedEntUVs( ply, mat, u1, v1, u2, v2 )
+	GAMEMODE:DrawBillboardedEntUVs( ply, ply:EyeAngles().r, mat, u1, v1, u2, v2 )
 end
 function DrawWithUVs( x, y, w, h, u1, v1, u2, v2, left )
 	if ( left ) then
